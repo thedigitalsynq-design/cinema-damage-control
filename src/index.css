@@ -1,0 +1,246 @@
+@import "tailwindcss";
+
+@theme {
+  /* Apple HIG dark palette — deference, clarity, depth.
+     war-* tokens kept for compatibility, remapped to Apple system colors. */
+  --color-war-bg: #000000;
+  --color-war-surface: rgba(28, 28, 30, 0.72);
+  --color-war-surface-2: #1c1c1e;
+  --color-war-surface-3: #2c2c2e;
+  --color-war-border: rgba(255, 255, 255, 0.08);
+  --color-war-border-light: rgba(255, 255, 255, 0.14);
+  --color-war-text: #f5f5f7;
+  --color-war-text-secondary: #a1a1a6;
+  --color-war-text-muted: #6e6e73;
+  --color-war-critical: #ff453a;
+  --color-war-critical-dim: #ff453a26;
+  --color-war-high: #ff9f0a;
+  --color-war-high-dim: #ff9f0a26;
+  --color-war-medium: #ffd60a;
+  --color-war-medium-dim: #ffd60a26;
+  --color-war-low: #0a84ff;
+  --color-war-low-dim: #0a84ff26;
+  --color-war-positive: #30d158;
+  --color-war-positive-dim: #30d15826;
+  --color-war-info: #0a84ff;
+  --color-war-info-dim: #0a84ff26;
+  --color-war-accent: #0a84ff;
+  --color-war-accent-dim: #0a84ff26;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Inter', 'Segoe UI', sans-serif;
+  --font-mono: 'SF Mono', ui-monospace, 'JetBrains Mono', monospace;
+  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
+
+  --shadow-apple-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-apple-pop: 0 8px 40px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html, body, #root {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    background: var(--color-war-bg);
+    color: var(--color-war-text);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.47059;
+    letter-spacing: -0.008em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: rgba(10, 132, 255, 0.35);
+  }
+
+  :focus-visible {
+    outline: 2px solid #0a84ff;
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.16);
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.28);
+    background-clip: content-box;
+  }
+}
+
+@layer components {
+  /* Apple card: generous radius, soft depth, frosted */
+  .glass-panel {
+    background: linear-gradient(180deg, rgba(44, 44, 46, 0.72), rgba(28, 28, 30, 0.72));
+    border: 1px solid var(--color-war-border);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-radius: 20px;
+    box-shadow: var(--shadow-apple-card);
+  }
+
+  .apple-card-hover {
+    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.35s ease, border-color 0.25s ease;
+  }
+
+  .apple-card-hover:hover {
+    transform: translateY(-1px);
+    border-color: var(--color-war-border-light);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.45);
+  }
+
+  .apple-title {
+    font-family: var(--font-display);
+    font-size: 28px;
+    line-height: 1.14;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #f5f5f7;
+  }
+
+  .apple-headline {
+    font-size: 15px;
+    line-height: 1.4;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: #f5f5f7;
+  }
+
+  .apple-subhead {
+    font-size: 13px;
+    line-height: 1.45;
+    font-weight: 400;
+    letter-spacing: -0.006em;
+    color: var(--color-war-text-secondary);
+  }
+
+  .apple-footnote {
+    font-size: 12px;
+    line-height: 1.42;
+    font-weight: 400;
+    color: var(--color-war-text-muted);
+  }
+
+  .metric-value {
+    font-family: var(--font-display);
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .metric-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-war-text-muted);
+  }
+
+  .section-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-war-text-secondary);
+  }
+
+  .status-pulse {
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+
+  .status-pulse-critical {
+    animation: pulse-critical 1.8s ease-in-out infinite;
+  }
+
+  .fade-in {
+    animation: fadeIn 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .slide-in-right {
+    animation: slideInRight 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .number-transition {
+    transition: all 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .apple-button {
+    border-radius: 999px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    transition: transform 0.2s cubic-bezier(0.32, 0.72, 0, 1), background 0.2s ease, opacity 0.2s ease;
+  }
+
+  .apple-button:active {
+    transform: scale(0.97);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-pulse, .status-pulse-critical, .fade-in, .slide-in-right {
+    animation: none;
+  }
+  .apple-card-hover:hover {
+    transform: none;
+  }
+  main > div {
+    animation: none;
+  }
+}
+
+/* Every lazily-mounted page gets a soft Apple-style entrance for free. */
+main > div {
+  animation: pageIn 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: opacity, transform;
+}
+
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes pulse-critical {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
