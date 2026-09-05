@@ -43,8 +43,11 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Matches vite `base`: '/' in dev, '/cinema-damage-control' in production builds.
+  const basename = import.meta.env.BASE_URL.replace(/\/+$/, '') || '/';
+
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <ToastProvider>
       <MotionConfig reducedMotion="user">
       <div className="flex h-screen w-screen overflow-hidden bg-black text-[#f5f5f7]">

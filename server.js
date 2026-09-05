@@ -13,7 +13,11 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json());
 
-// Serve static build files
+// The production build lives under the same subpath as GitHub Pages
+app.get('/', (req, res) => res.redirect('/cinema-damage-control/'));
+
+// Serve static build files (subpath first so bundled asset URLs resolve)
+app.use('/cinema-damage-control', express.static(join(__dirname, 'dist')));
 app.use(express.static(join(__dirname, 'dist')));
 
 // --- RSS Feed Fetching ---
