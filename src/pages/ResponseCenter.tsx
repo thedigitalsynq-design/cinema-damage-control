@@ -1,8 +1,14 @@
 import { useState } from 'react';
 import { clsx } from 'clsx';
-import { CheckCircle, XCircle, AlertTriangle, FileText } from 'lucide-react';
+import { GIcon } from '../components/GIcon';
 import { incidents } from '../data/mockData';
 import { useToast } from '../components/Toaster';
+import { LiveBanner } from '../components/LiveBanner';
+import { useRoom, type RoomActionKind } from '../components/RoomState';
+import { useProject } from '../components/ProjectContext';
+import { useLiveData } from '../hooks/useLiveData';
+import { activeCrises } from '../data/damage';
+import { projectLoss } from '../data/algorithm';
 
 interface ExecutionEntry {
   id: number;
@@ -10,14 +16,15 @@ interface ExecutionEntry {
   title: string;
   detail: string;
   meta: string;
+  result?: string;
 }
 
-const toneStyles: Record<ExecutionEntry['tone'], { box: string; text: string; icon: typeof CheckCircle }> = {
-  approved: { box: 'border-[#30d158]/25 bg-[#30d158]/10', text: 'text-[#30d158]', icon: CheckCircle },
-  pending: { box: 'border-white/[0.08] bg-white/[0.03]', text: 'text-[#ffd60a]', icon: AlertTriangle },
-  draft: { box: 'border-white/[0.08] bg-white/[0.03]', text: 'text-[#64a8ff]', icon: FileText },
-  rejected: { box: 'border-white/[0.08] bg-white/[0.03]', text: 'text-[#ff6961]', icon: XCircle },
-  escalated: { box: 'border-[#ff453a]/25 bg-[#ff453a]/10', text: 'text-[#ff6961]', icon: AlertTriangle },
+const toneStyles: Record<ExecutionEntry['tone'], { box: string; text: string; icon: string }> = {
+  approved: { box: 'border-[#30d158]/25 bg-[#30d158]/10', text: 'text-[#30d158]', icon: 'check_circle' },
+  pending: { box: 'border-white/[0.08] bg-white/[0.03]', text: 'text-[#ffd60a]', icon: 'warning' },
+  draft: { box: 'border-white/[0.08] bg-white/[0.03]', text: 'text-[#64a8ff]', icon: 'description' },
+  rejected: { box: 'border-white/[0.08] bg-white/[0.03]', text: 'text-[#ff6961]', icon: 'cancel' },
+  escalated: { box: 'border-[#ff453a]/25 bg-[#ff453a]/10', text: 'text-[#ff6961]', icon: 'warning' },
 };
 
 const initialLog: ExecutionEntry[] = [
@@ -31,15 +38,15 @@ function nowIST(): string {
 }
 
 const playbooks = [
-  { name: 'Monitor', objective: 'Track and observe', risk: 'LOW', timing: 'Immediate', owner: 'System', approval: 'None', outcome: 'Continued awareness' },
-  { name: 'Clarify', objective: 'Provide factual context', risk: 'MEDIUM', timing: '1–2 hours', owner: 'PR Lead', approval: 'Director', outcome: 'Reduced confusion' },
-  { name: 'Correct', objective: 'Counter misinformation', risk: 'MEDIUM', timing: '2–4 hours', owner: 'Comms Team', approval: 'VP', outcome: 'Truth correction' },
-  { name: 'Amplify positive', objective: 'Boost positive narratives', risk: 'LOW', timing: '1–3 hours', owner: 'Marketing', approval: 'Director', outcome: 'Narrative rebalance' },
-  { name: 'Engage media', objective: 'Proactive media outreach', risk: 'HIGH', timing: '2–6 hours', owner: 'PR Agency', approval: 'C-Suite', outcome: 'Media narrative shift' },
-  { name: 'Activate community', objective: 'Mobilize fan base', risk: 'MEDIUM', timing: '1–4 hours', owner: 'Community Mgr', approval: 'Director', outcome: 'Fan defense' },
-  { name: 'Executive response', objective: 'Leadership statement', risk: 'HIGH', timing: '4–12 hours', owner: 'CEO / Studio Head', approval: 'Board', outcome: 'Authority intervention' },
-  { name: 'Legal review', objective: 'Legal assessment', risk: 'HIGH', timing: '2–24 hours', owner: 'Legal Counsel', approval: 'General Counsel', outcome: 'Legal guidance' },
-  { name: 'Crisis statement', objective: 'Official public statement', risk: 'CRITICAL', timing: '4–24 hours', owner: 'PR Director', approval: 'C-Suite', outcome: 'Public address' },
+  { name: 'Monitor', objective: 'Track and observe', risk: 'LOW', timing: 'Immediate', owner: 'System', approval: 'None', outcome: 'Continued awareness', urgency: 'MONITOR', confidence: 92, why: 'Baseline watch costs nothing and catches ignition early.', impact: 'Early warning on new spikes.' },
+  { name: 'Clarify', objective: 'Provide factual context', risk: 'MEDIUM', timing: '1–2 hours', owner: 'PR Lead', approval: 'Director', outcome: 'Reduced confusion', urgency: 'THIS WEEK', confidence: 78, why: 'Confusion, not hostility, drives most early negativity.', impact: 'Cut misread stories by a third.' },
+  { name: 'Correct', objective: 'Counter misinformation', risk: 'MEDIUM', timing: '2–4 hours', owner: 'Comms Team', approval: 'VP', outcome: 'Truth correction', urgency: 'THIS WEEK', confidence: 74, why: 'False claims travel faster than corrections — speed matters.', impact: 'Contain false-narrative share.' },
+  { name: 'Amplify positive', objective: 'Boost positive narratives', risk: 'LOW', timing: '1–3 hours', owner: 'Marketing', approval: 'Director', outcome: 'Narrative rebalance', urgency: 'THIS WEEK', confidence: 69, why: 'Algorithms reward engagement; positivity needs paid push.', impact: 'Lift positive share 5–10 pts.' },
+  { name: 'Engage media', objective: 'Proactive media outreach', risk: 'HIGH', timing: '2–6 hours', owner: 'PR Agency', approval: 'C-Suite', outcome: 'Media narrative shift', urgency: 'NOW', confidence: 71, why: 'Two portals set the tone every other outlet copies.', impact: 'Flip 2–3 agenda-setting stories.' },
+  { name: 'Activate community', objective: 'Mobilize fan base', risk: 'MEDIUM', timing: '1–4 hours', owner: 'Community Mgr', approval: 'Director', outcome: 'Fan defense', urgency: 'THIS WEEK', confidence: 66, why: 'Organised fans out-post critics 10:1 when briefed.', impact: 'Flood hashtags with support.' },
+  { name: 'Executive response', objective: 'Leadership statement', risk: 'HIGH', timing: '4–12 hours', owner: 'CEO / Studio Head', approval: 'Board', outcome: 'Authority intervention', urgency: 'NOW', confidence: 63, why: 'Only authority ends authority-shaped controversies.', impact: 'Reset the news cycle.' },
+  { name: 'Legal review', objective: 'Legal assessment', risk: 'HIGH', timing: '2–24 hours', owner: 'Legal Counsel', approval: 'General Counsel', outcome: 'Legal guidance', urgency: 'THIS WEEK', confidence: 88, why: 'Review-bombing and leaks cross legal lines fast.', impact: 'Takedowns with standing.' },
+  { name: 'Crisis statement', objective: 'Official public statement', risk: 'CRITICAL', timing: '4–24 hours', owner: 'PR Director', approval: 'C-Suite', outcome: 'Public address', urgency: 'NOW', confidence: 58, why: 'Last resort: speaks once, binds the studio.', impact: 'End speculation or own it.' },
 ];
 
 const riskStyles: Record<string, string> = {
@@ -49,13 +56,30 @@ const riskStyles: Record<string, string> = {
   CRITICAL: 'bg-[#ff453a]/15 text-[#ff6961]',
 };
 
+const urgencyStyles: Record<string, string> = {
+  NOW: 'bg-[#ff453a]/15 text-[#ff6961]',
+  'THIS WEEK': 'bg-[#ff9f0a]/15 text-[#ffb340]',
+  MONITOR: 'bg-white/10 text-war-text-secondary',
+};
+
 export function ResponseCenter() {
+  const { project } = useProject();
+  const { stats, isLive } = useLiveData(project.keywords.join(','));
+  const velocity = isLive && stats ? stats.velocityPct : 38;
+  const exposure = (() => {
+    const m = (activeCrises[0]?.revenueAtRisk || '').match(/[\d.]+/);
+    return m ? parseFloat(m[0]) : 8;
+  })();
+  const sim = projectLoss(exposure, velocity);
   const [selectedIncident, setSelectedIncident] = useState(incidents[0]);
+  const [dismissedPlays, setDismissedPlays] = useState<string[]>([]);
   const [log, setLog] = useState<ExecutionEntry[]>(initialLog);
   const toast = useToast();
+  const { apply } = useRoom();
 
-  const decide = (tone: ExecutionEntry['tone'], message: string) => {
+  const decide = (tone: ExecutionEntry['tone'], message: string, kind: RoomActionKind) => {
     if (!selectedIncident) return;
+    apply(kind);
     setLog((prev) => [
       {
         id: Date.now(),
@@ -63,6 +87,7 @@ export function ResponseCenter() {
         title: tone.charAt(0).toUpperCase() + tone.slice(1),
         detail: `${message}: ${selectedIncident.title}`,
         meta: nowIST(),
+        result: 'Before metrics logged · review in 72h · TRACKING',
       },
       ...prev,
     ]);
@@ -75,8 +100,10 @@ export function ResponseCenter() {
         <div className="pb-1">
           <p className="text-[13px] font-medium text-war-text-muted">Cinema Damage Control Room</p>
           <h1 className="apple-title mt-0.5">Response</h1>
-          <p className="apple-subhead mt-1">Decide, approve, and execute for Project Veera.</p>
+          <p className="apple-subhead mt-1">Decide, approve, and execute.</p>
         </div>
+
+        <LiveBanner />
 
         {/* Three-Column Layout */}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -142,25 +169,25 @@ export function ResponseCenter() {
 
                 <div className="grid grid-cols-2 gap-2">
                   <button
-                    onClick={() => decide('approved', 'Recommendation approved')}
+                    onClick={() => decide('approved', 'Recommendation approved · risk −4', 'approve')}
                     className="apple-button flex items-center justify-center gap-1.5 bg-[#30d158] px-3 py-2 text-[13px] text-black hover:brightness-110"
                   >
-                    <CheckCircle size={14} /> Approve
+                    <GIcon name="check_circle" size={15} /> Approve
                   </button>
                   <button
-                    onClick={() => decide('pending', 'Sent back for modification')}
+                    onClick={() => decide('pending', 'Sent back for modification', 'modify')}
                     className="apple-button bg-white/10 px-3 py-2 text-[13px] text-white hover:bg-white/15"
                   >
                     Modify
                   </button>
                   <button
-                    onClick={() => decide('rejected', 'Recommendation rejected')}
+                    onClick={() => decide('rejected', 'Recommendation rejected · risk +3', 'reject')}
                     className="apple-button flex items-center justify-center gap-1.5 bg-white/10 px-3 py-2 text-[13px] text-white hover:bg-white/15"
                   >
-                    <XCircle size={14} /> Reject
+                    <GIcon name="cancel" size={15} /> Reject
                   </button>
                   <button
-                    onClick={() => decide('escalated', 'Escalated to C-Suite')}
+                    onClick={() => decide('escalated', 'Escalated to C-Suite', 'escalate')}
                     className="apple-button bg-[#ff453a] px-3 py-2 text-[13px] text-white hover:brightness-110"
                   >
                     Escalate
@@ -179,15 +206,17 @@ export function ResponseCenter() {
             <div className="space-y-2.5">
               {log.map((entry) => {
                 const style = toneStyles[entry.tone];
-                const Icon = style.icon;
                 return (
                   <div key={entry.id} className={clsx('rounded-2xl border p-4 fade-in', style.box)}>
                     <div className="mb-1 flex items-center gap-2">
-                      <Icon size={14} className={style.text} />
+                      <GIcon name={style.icon} size={15} className={style.text} />
                       <span className={clsx('text-[12px] font-semibold', style.text)}>{entry.title}</span>
                     </div>
                     <p className="text-[13px] leading-relaxed text-war-text-secondary">{entry.detail}</p>
                     <span className="mt-1 block text-[12px] tabular-nums text-war-text-muted">{entry.meta}</span>
+                    {entry.result && (
+                      <span className="mt-1.5 block text-[11px] font-medium text-[#ffd60a]">{entry.result}</span>
+                    )}
                   </div>
                 );
               })}
@@ -202,18 +231,72 @@ export function ResponseCenter() {
             <span className="apple-footnote">{playbooks.length} plays</span>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {playbooks.map((pb) => (
+            {playbooks.filter((pb) => !dismissedPlays.includes(pb.name)).map((pb) => (
               <div key={pb.name} className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4 transition hover:border-white/[0.14] hover:bg-white/[0.05]">
                 <div className="mb-1.5 flex items-center justify-between gap-2">
                   <span className="text-[14px] font-semibold tracking-[-0.006em] text-white">{pb.name}</span>
                   <span className={clsx('rounded-full px-2 py-0.5 text-[11px] font-semibold', riskStyles[pb.risk])}>{pb.risk.toLowerCase()} risk</span>
                 </div>
-                <p className="mb-2.5 text-[13px] text-war-text-secondary">{pb.objective}</p>
-                <div className="space-y-1 border-t border-white/[0.06] pt-2.5 text-[12px] text-war-text-muted">
-                  <div>Timing · <span className="text-war-text-secondary">{pb.timing}</span></div>
-                  <div>Owner · <span className="text-war-text-secondary">{pb.owner}</span></div>
-                  <div>Approval · <span className="text-war-text-secondary">{pb.approval}</span></div>
+                <p className="mb-2 text-[13px] text-war-text-secondary">{pb.objective}</p>
+                <p className="mb-1 text-[12px] leading-relaxed text-war-text-muted"><span className="font-medium text-war-text-secondary">Why: </span>{pb.why}</p>
+                <p className="mb-2.5 text-[12px] leading-relaxed text-war-text-muted"><span className="font-medium text-war-text-secondary">Impact: </span>{pb.impact}</p>
+                <div className="mb-3 flex items-center gap-2">
+                  <span className={clsx('rounded-full px-2 py-0.5 text-[10px] font-bold', urgencyStyles[pb.urgency])}>{pb.urgency}</span>
+                  <span className="text-[11px] tabular-nums text-war-text-muted">{pb.confidence}% confidence</span>
                 </div>
+                <div className="flex gap-2 border-t border-white/[0.06] pt-2.5">
+                  <button
+                    onClick={() => {
+                      apply('approve');
+                      setLog((prev) => [{
+                        id: Date.now(),
+                        tone: 'approved',
+                        title: 'Approved',
+                        detail: `Playbook executed: ${pb.name} — ${pb.objective}`,
+                        meta: nowIST(),
+                        result: 'Before metrics logged · review in 72h · TRACKING',
+                      }, ...prev]);
+                      toast(`${pb.name} executing · risk −4`, 'success');
+                    }}
+                    className="apple-button flex-1 bg-[#0a84ff] py-1.5 text-[12px] text-white hover:bg-[#409cff]"
+                  >
+                    Execute
+                  </button>
+                  <button
+                    onClick={() => { setDismissedPlays((d) => [...d, pb.name]); toast(`${pb.name} dismissed`, 'info'); }}
+                    className="apple-button bg-white/10 px-3 py-1.5 text-[12px] text-white hover:bg-white/15"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          {dismissedPlays.length > 0 && (
+            <p className="apple-footnote mt-3">{dismissedPlays.length} play{dismissedPlays.length > 1 ? 's' : ''} dismissed this session.</p>
+          )}
+        </div>
+
+        {/* 72-hour risk simulation — model, not a forecast */}
+        <div className="glass-panel p-5">
+          <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
+            <span className="section-title">72-hour risk simulation</span>
+            <span className="rounded-full bg-white/[0.07] px-2 py-0.5 text-[10px] font-semibold tracking-wider text-war-text-muted">MODEL · NOT FINANCIAL ADVICE</span>
+          </div>
+          <p className="apple-footnote mb-4">Projected loss from current velocity ({velocity >= 0 ? '+' : ''}{Math.round(velocity)}%) if each path is taken.</p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {(
+              [
+                { label: 'Do nothing', loss: `₹${sim.doNothing} Cr`, note: 'Velocity compounds unchecked.', hot: false },
+                { label: 'Show optimisation', loss: `₹${sim.showOpt} Cr`, note: 'Cut sub-20% morning shows.', hot: false },
+                { label: 'Regional marketing + optimisation', loss: `₹${sim.combined} Cr`, note: 'Push Telugu + Tamil corridors.', hot: false },
+                { label: 'Best intervention', loss: `₹${sim.protected} Cr protected`, note: 'All of the above, this week.', hot: true },
+              ] as const
+            ).map((s) => (
+              <div key={s.label} className={clsx('rounded-2xl border p-4', s.hot ? 'border-[#30d158]/25 bg-[#30d158]/[0.07]' : 'border-white/[0.07] bg-white/[0.03]')}>
+                <div className="text-[14px] font-semibold text-white">{s.label}</div>
+                <div className={clsx('mt-1 text-[20px] font-bold tabular-nums', s.hot ? 'text-[#30d158]' : 'text-[#ff6961]')}>{s.loss}</div>
+                <div className="mt-1 text-[12px] text-war-text-muted">{s.note}</div>
               </div>
             ))}
           </div>

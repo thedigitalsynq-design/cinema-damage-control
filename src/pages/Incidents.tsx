@@ -1,12 +1,18 @@
 import { useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
+import { GIcon } from '../components/GIcon';
 import { incidents } from '../data/mockData';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { IncidentDrawer } from '../components/IncidentDrawer';
+import { useLiveData } from '../hooks/useLiveData';
+import { useProject } from '../components/ProjectContext';
 import type { Incident } from '../data/types';
 
 export function Incidents() {
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
+  const { project } = useProject();
+  const { liveIncidents, isLive } = useLiveData(project.keywords.join(','));
+  const showLive = isLive && liveIncidents.length > 0;
 
   const counts = {
     CRITICAL: incidents.filter((i) => i.severity === 'CRITICAL').length,
@@ -21,7 +27,7 @@ export function Incidents() {
           <div>
             <p className="text-[13px] font-medium text-war-text-muted">Cinema Damage Control Room</p>
             <h1 className="apple-title mt-0.5">Incidents</h1>
-            <p className="apple-subhead mt-1">Active crisis incidents for Project Veera.</p>
+            <p className="apple-subhead mt-1">Active crisis incidents under tracking.</p>
           </div>
           <div className="flex items-center gap-2">
             {(
@@ -38,6 +44,35 @@ export function Incidents() {
             ))}
           </div>
         </div>
+
+        {showLive && (
+          <div className="glass-panel p-5">
+            <div className="mb-3 flex items-baseline justify-between">
+              <span className="section-title">Live detections</span>
+              <span className="apple-footnote">{liveIncidents.length} fresh stories</span>
+            </div>
+            <div className="space-y-2">
+              {liveIncidents.map((inc: any) => (
+                <a
+                  key={inc.id}
+                  href={inc.link || undefined}
+                  target={inc.link ? '_blank' : undefined}
+                  rel="noopener noreferrer"
+                  className="group flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 transition hover:border-white/[0.12] hover:bg-white/[0.05]"
+                >
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${inc.sentiment === 'NEGATIVE' ? 'bg-[#ff453a]' : inc.sentiment === 'POSITIVE' ? 'bg-[#30d158]' : 'bg-[#a1a1a6]'}`} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[14px] font-medium text-white" title={inc.title}>{inc.title}</p>
+                    <p className="mt-0.5 text-[12px] tabular-nums text-war-text-muted">{inc.source} · {inc.time} · {inc.reach} reach</p>
+                  </div>
+                  {inc.link ? (
+                    <GIcon name="open_in_new" size={14} className="shrink-0 text-war-text-muted opacity-0 transition group-hover:opacity-100" />
+                  ) : null}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="glass-panel overflow-hidden">
           <div className="overflow-x-auto">

@@ -4,45 +4,32 @@ import { motion } from 'framer-motion';
 import { clsx } from 'clsx';
 import { api } from '../data/apiService';
 import { useToast } from './Toaster';
-import {
-  LayoutDashboard,
-  Radio,
-  AlertTriangle,
-  GitBranch,
-  Share2,
-  Newspaper,
-  Users,
-  BarChart3,
-  Send,
-  TrendingUp,
-  FileText,
-  Settings,
-  Database,
-  Users2,
-  Activity,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react';
+import { PHASES, PHASE_ORDERS, usePhase } from './PhaseContext';
+import { GIcon } from './GIcon';
 
 const navItems = [
-  { path: '/', label: 'Command Center', icon: LayoutDashboard },
-  { path: '/signals', label: 'Live Signals', icon: Radio },
-  { path: '/incidents', label: 'Incidents', icon: AlertTriangle },
-  { path: '/narratives', label: 'Narratives', icon: GitBranch },
-  { path: '/social', label: 'Social', icon: Share2 },
-  { path: '/media', label: 'Media', icon: Newspaper },
-  { path: '/influencers', label: 'Influencers', icon: Users },
-  { path: '/audience', label: 'Audience', icon: BarChart3 },
-  { path: '/response', label: 'Response', icon: Send },
-  { path: '/recovery', label: 'Recovery', icon: TrendingUp },
-  { path: '/reports', label: 'Reports', icon: FileText },
+  { path: '/', label: 'Damage Control', icon: 'dashboard' },
+  { path: '/films', label: 'Films', icon: 'movie' },
+  { path: '/signals', label: 'Live Signals', icon: 'radio' },
+  { path: '/incidents', label: 'Incidents', icon: 'warning' },
+  { path: '/leaks', label: 'Leaks', icon: 'shield' },
+  { path: '/narratives', label: 'Narratives', icon: 'account_tree' },
+  { path: '/social', label: 'Social', icon: 'share' },
+  { path: '/media', label: 'Media', icon: 'newspaper' },
+  { path: '/influencers', label: 'Influencers', icon: 'group' },
+  { path: '/audience', label: 'Audience', icon: 'bar_chart' },
+  { path: '/markets', label: 'Markets', icon: 'public' },
+  { path: '/response', label: 'Actions', icon: 'send' },
+  { path: '/recovery', label: 'Recovery', icon: 'trending_up' },
+  { path: '/reports', label: 'Reports', icon: 'description' },
+  { path: '/analyst', label: 'Analyst', icon: 'auto_awesome' },
 ];
 
 const bottomItems = [
-  { label: 'System Status', icon: Activity },
-  { label: 'Data Sources', icon: Database },
-  { label: 'Team', icon: Users2 },
-  { label: 'Settings', icon: Settings },
+  { label: 'System Status', icon: 'activity_zone' },
+  { label: 'Data Sources', icon: 'database' },
+  { label: 'Team', icon: 'group' },
+  { label: 'Settings', icon: 'settings' },
 ];
 
 export function Sidebar() {
@@ -51,6 +38,14 @@ export function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const toast = useToast();
+  const { phase } = usePhase();
+
+  // Sidebar order follows the release phase; the top 3 non-home items are the phase focus.
+  const order = PHASE_ORDERS[phase];
+  const orderedItems = [...navItems].sort(
+    (a, b) => order.indexOf(a.path) - order.indexOf(b.path)
+  );
+  const focusPaths = new Set(order.filter((p) => p !== '/').slice(0, 3));
 
   const handleTool = async (label: string) => {
     if (label === 'System Status') {
@@ -103,19 +98,19 @@ export function Sidebar() {
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           className="rounded-full p-1.5 text-war-text-muted transition hover:bg-white/10 hover:text-white active:scale-95"
         >
-          {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
+          <GIcon name={collapsed ? 'chevron_right' : 'chevron_left'} size={17} />
         </button>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2.5 py-1">
         {!collapsed && (
           <p className="px-2.5 pb-1.5 pt-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-war-text-muted">
-            Intelligence
+            {phase === 'pre' ? 'Prepare' : phase === 'opening' ? 'Triage' : 'Recover'} · {PHASES.find((p) => p.id === phase)?.label}
           </p>
         )}
-        {navItems.map((item) => {
-          const Icon = item.icon;
+        {orderedItems.map((item) => {
           const active = location.pathname === item.path;
+          const isFocus = focusPaths.has(item.path);
           return (
             <button
               key={item.path}
@@ -136,9 +131,12 @@ export function Sidebar() {
                   transition={{ type: 'spring', stiffness: 480, damping: 38 }}
                 />
               )}
-              <Icon size={17} strokeWidth={active ? 2.2 : 1.8} className={clsx('relative shrink-0', active ? 'text-[#64a8ff]' : 'text-war-text-secondary group-hover:text-white')} />
+              <GIcon name={item.icon} size={19} filled={active} className={clsx('relative', active ? 'text-[#64a8ff]' : 'text-war-text-secondary group-hover:text-white')} />
               {!collapsed && (
                 <span className="relative text-[13px] font-medium tracking-[-0.006em]">{item.label}</span>
+              )}
+              {isFocus && !active && (
+                <span title="Phase focus" className="relative ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-[#30d158]/70" />
               )}
               {active && !collapsed && (
                 <span className="relative ml-auto h-1.5 w-1.5 rounded-full bg-[#0a84ff]" />
@@ -150,7 +148,6 @@ export function Sidebar() {
 
       <div className="border-t border-white/[0.06] px-2.5 py-2.5">
         {bottomItems.map((item) => {
-          const Icon = item.icon;
           return (
             <button
               key={item.label}
@@ -162,7 +159,7 @@ export function Sidebar() {
               )}
               title={collapsed ? item.label : undefined}
             >
-              <Icon size={16} strokeWidth={1.8} className="shrink-0" />
+              <GIcon name={item.icon} size={18} className="shrink-0" />
               {!collapsed && (
                 <span className="text-[13px] font-normal">{item.label}</span>
               )}

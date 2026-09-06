@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { Plus, Search, Send, FileText } from 'lucide-react';
 import { Liquid } from 'liquid-gooey';
+import { GIcon } from './GIcon';
+import { useToast } from './Toaster';
 
 /**
  * Floating quick-actions menu with a liquid-gooey effect.
@@ -14,6 +15,7 @@ import { Liquid } from 'liquid-gooey';
 export function GooeyActions({ onOpenCommandPalette }: { onOpenCommandPalette: () => void }) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const toast = useToast();
 
   const go = (path: string) => {
     setOpen(false);
@@ -23,7 +25,7 @@ export function GooeyActions({ onOpenCommandPalette }: { onOpenCommandPalette: (
   const actions = [
     {
       label: 'Search commands',
-      icon: Search,
+      icon: 'search',
       x: 0,
       y: -84,
       delay: 0,
@@ -34,19 +36,22 @@ export function GooeyActions({ onOpenCommandPalette }: { onOpenCommandPalette: (
     },
     {
       label: 'Open Response Center',
-      icon: Send,
+      icon: 'send',
       x: -60,
       y: -60,
       delay: 40,
       run: () => go('/response'),
     },
     {
-      label: 'Export brief',
-      icon: FileText,
+      label: 'Export desk',
+      icon: 'description',
       x: -84,
       y: 0,
       delay: 80,
-      run: () => go('/reports'),
+      run: () => {
+        go('/reports');
+        toast('Export desk opened — pick a report to download', 'info');
+      },
     },
   ];
 
@@ -71,7 +76,6 @@ export function GooeyActions({ onOpenCommandPalette }: { onOpenCommandPalette: (
         >
           {/* Satellite actions — stacked on the FAB when closed, fanning out when open */}
           {actions.map((a) => {
-            const Icon = a.icon;
             return (
               <Liquid.Item
                 key={a.label}
@@ -88,7 +92,7 @@ export function GooeyActions({ onOpenCommandPalette }: { onOpenCommandPalette: (
                   onClick={a.run}
                   className="flex h-14 w-14 items-center justify-center rounded-full bg-transparent text-white"
                 >
-                  <Icon size={19} />
+                  <GIcon name={a.icon} size={21} />
                 </button>
               </Liquid.Item>
             );
@@ -104,8 +108,9 @@ export function GooeyActions({ onOpenCommandPalette }: { onOpenCommandPalette: (
               onClick={() => setOpen((v) => !v)}
               className="flex h-14 w-14 items-center justify-center rounded-full bg-transparent text-white"
             >
-              <Plus
-                size={22}
+              <GIcon
+                name="add"
+                size={24}
                 className={clsx('transition-transform duration-300', open && 'rotate-45')}
               />
             </button>

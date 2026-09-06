@@ -1,8 +1,9 @@
 import { clsx } from 'clsx';
-import { FileText, Download, Clock, Radio, ExternalLink } from 'lucide-react';
+import { GIcon } from '../components/GIcon';
 import { useLiveData } from '../hooks/useLiveData';
 import { estimateSentiment } from '../data/apiService';
 import { useToast } from '../components/Toaster';
+import { useProject } from '../components/ProjectContext';
 
 function downloadMarkdown(filename: string, body: string) {
   const blob = new Blob([body], { type: 'text/markdown;charset=utf-8' });
@@ -51,63 +52,107 @@ const reports = [
   },
 ];
 
-const briefContent = {
-  whatHappened: 'A 46-second edited interview clip featuring the lead actor began circulating on X at 18:47 IST. The clip, taken out of context, sparked immediate negative reaction. Within 60 minutes, the #BoycottVeera hashtag entered top 10 trending on X India. Multiple entertainment portals published critical articles, and negative sentiment accelerated from 24% to 78%.',
-  whyItMatters: 'The controversy threatens the film\'s September 18 release. Current trajectory suggests potential box office impact of ₹80-120 crore if unaddressed. Brand partnerships and satellite rights may be affected.',
+const toxicBrief = {
+  whatHappened: 'Yash-starrer Toxic: A Fairy Tale for Grown-Ups (dir. Geetu Mohandas) released worldwide on August 26, 2026 in Kannada plus Hindi, Tamil, Telugu and Malayalam dubs. After a ₹140 crore worldwide opening day, momentum softened — ~₹322 crore in 8 days against blockbuster expectations. On September 4 the makers released a shorter English cut (2h57m vs 3h14m) in India alongside Mirzapur: The Movie, resetting the conversation around runtime and reception.',
+  whyItMatters: 'Toxic is Yash\'s first release since KGF: Chapter 2 and a test of the pan-India gangster epic. The underperformance narrative now dominates coverage and threatens satellite, OTT and brand outcomes. The English-cut release is a second opening — its reception will set the final story.',
   topNarratives: [
-    'Lead Actor Controversy — 34% of conversation',
-    'Political Interpretation — 21% of conversation',
-    'Film Quality Criticism — 18% of conversation',
+    'Box-office underperformance — 38% of conversation',
+    'English shorter-cut reset — 24% of conversation',
+    'Yash comeback scrutiny — 19% of conversation',
   ],
   topActions: [
-    'Release full unedited footage immediately',
-    'Prepare and distribute factual clarification',
-    'Brief authorized spokesperson',
+    'Amplify English-cut word-of-mouth within 48 hours of release',
+    'Seed behind-the-scenes craft coverage to shift from numbers to filmmaking',
+    'Brief Yash and Geetu Mohandas with two aligned talking points each',
   ],
-  ifNoAction: 'Risk trajectory shows continued escalation. Estimated to cross 85/100 within 2 hours. Boycott narrative projected to reach 15M+ estimated reach by midnight.',
+  ifNoAction: 'The flop narrative hardens into consensus before the OTT window. Estimated reputational drag on Yash\'s next announcement and 15–20% weaker ancillary deals.',
 };
+
+interface Brief {
+  whatHappened: string;
+  whyItMatters: string;
+  topNarratives: string[];
+  topActions: string[];
+  ifNoAction: string;
+  live: boolean;
+}
+
+function buildBrief(
+  project: { id: string; title: string },
+  stats: { total: number; negPct: number; posPct: number; velocityPct: number; reachLabel: string; trending: { term: string; mentions: number }[] } | null,
+  isLive: boolean
+): Brief {
+  if (isLive && stats) {
+    const terms = stats.trending.slice(0, 3).map((t) => `${t.term} — ${t.mentions} stories`);
+    return {
+      whatHappened: `${stats.total} stories tracked for ${project.title}: ${stats.negPct}% read negative, ${stats.posPct}% positive, volume ${stats.velocityPct >= 0 ? '+' : ''}${stats.velocityPct}% day-over-day with an estimated ${stats.reachLabel} reach.`,
+      whyItMatters: `Narrative momentum for ${project.title} is being set right now — the dominant terms (${terms[0] || 'forming'}) will frame the next 48 hours of coverage.`,
+      topNarratives: terms.length > 0 ? terms : ['Coverage too thin to mine narratives yet'],
+      topActions: [
+        'Amplify the strongest positive story within 24 hours',
+        'Prepare a factual clarification for the top negative term',
+        'Brief one authorized spokesperson before the next cycle',
+      ],
+      ifNoAction: 'The leading negative term hardens into the consensus story for this title.',
+      live: true,
+    };
+  }
+  if (project.id === 'toxic') return { ...toxicBrief, live: false };
+  return {
+    whatHappened: `${project.title} is under tracking. Start the backend to replace this simulation brief with measured coverage.`,
+    whyItMatters: 'Without live data every number on this page is illustrative.',
+    topNarratives: ['Simulation narrative A — illustrative', 'Simulation narrative B — illustrative'],
+    topActions: ['Start the backend (`npm run server`)', 'Confirm keyword coverage for this title', 'Set the release phase in the top bar'],
+    ifNoAction: 'Decisions made on simulation data stay simulation decisions.',
+    live: false,
+  };
+}
 
 export function Reports() {
   const toast = useToast();
+  const { project } = useProject();
+  const { news: liveNews, stats: briefStats, isLive: briefLive, lastUpdated: liveUpdated, isLoading: liveLoading } = useLiveData(project.keywords.join(','));
+  const liveOk = briefLive && !!briefStats;
+  const brief = buildBrief(project, briefStats, liveOk);
 
   const exportBrief = () => {
     const stamp = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
     const md = [
-      `# 60-Second Brief — Project Veera`,
+      `# 60-Second Brief — ${project.title}${brief.live ? '' : ' (simulation)'}`,
       `_Cinema Damage Control Room · generated ${stamp}_`,
       ``,
       `## What happened?`,
-      briefContent.whatHappened,
+      brief.whatHappened,
       ``,
       `## Why it matters`,
-      briefContent.whyItMatters,
+      brief.whyItMatters,
       ``,
       `## What is driving it?`,
-      ...briefContent.topNarratives.map((n) => `- ${n}`),
+      ...brief.topNarratives.map((n) => `- ${n}`),
       ``,
       `## What should we do?`,
-      ...briefContent.topActions.map((a, i) => `${i + 1}. ${a}`),
+      ...brief.topActions.map((a, i) => `${i + 1}. ${a}`),
       ``,
       `## What happens if we do nothing?`,
-      briefContent.ifNoAction,
+      brief.ifNoAction,
     ].join('\n');
-    downloadMarkdown('veera-60-second-brief.md', md);
+    downloadMarkdown(`${project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-60-second-brief.md`, md);
     toast('Brief downloaded as Markdown', 'success');
   };
 
   const exportReport = (id: string, title: string, subtitle: string, description: string) => {
     const stamp = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
     const md = [
-      `# ${title} — Project Veera`,
+      `# ${title} — ${project.title}`,
       `_${subtitle} · Cinema Damage Control Room · generated ${stamp}_`,
       ``,
       description,
       ``,
       `## Current situation`,
-      briefContent.whatHappened,
+      brief.whatHappened,
       ``,
       `## Recommended actions`,
-      ...briefContent.topActions.map((a, i) => `${i + 1}. ${a}`),
+      ...brief.topActions.map((a, i) => `${i + 1}. ${a}`),
     ].join('\n');
     downloadMarkdown(`${id}.md`, md);
     toast(`“${title}” downloaded as Markdown`, 'success');
@@ -119,7 +164,7 @@ export function Reports() {
         <div className="pb-1">
           <p className="text-[13px] font-medium text-war-text-muted">Cinema Damage Control Room</p>
           <h1 className="apple-title mt-0.5">Reports</h1>
-          <p className="apple-subhead mt-1">Briefs and exports for Project Veera.</p>
+          <p className="apple-subhead mt-1">Briefs and exports for {project.title}.</p>
         </div>
 
         {/* Executive Brief Preview */}
@@ -133,23 +178,23 @@ export function Reports() {
               onClick={exportBrief}
               className="apple-button flex items-center gap-1.5 bg-[#0a84ff] px-4 py-2 text-[14px] text-white hover:bg-[#409cff]"
             >
-              <Download size={14} /> Export
+              <GIcon name="download" size={14} /> Export
             </button>
           </div>
 
           <div className="space-y-5">
             <div>
               <h3 className="section-title mb-1.5">What happened?</h3>
-              <p className="max-w-[900px] text-[14px] leading-relaxed text-war-text-secondary">{briefContent.whatHappened}</p>
+              <p className="max-w-[900px] text-[14px] leading-relaxed text-war-text-secondary">{brief.whatHappened}</p>
             </div>
             <div>
               <h3 className="section-title mb-1.5">Why it matters</h3>
-              <p className="max-w-[900px] text-[14px] leading-relaxed text-war-text-secondary">{briefContent.whyItMatters}</p>
+              <p className="max-w-[900px] text-[14px] leading-relaxed text-war-text-secondary">{brief.whyItMatters}</p>
             </div>
             <div>
               <h3 className="section-title mb-2">What is driving it?</h3>
               <ul className="space-y-1.5">
-                {briefContent.topNarratives.map((n, i) => (
+                {brief.topNarratives.map((n, i) => (
                   <li key={i} className="flex items-center gap-2.5 text-[14px] text-war-text-secondary">
                     <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#ff453a]" />
                     {n}
@@ -160,7 +205,7 @@ export function Reports() {
             <div>
               <h3 className="section-title mb-2">What should we do?</h3>
               <ol className="space-y-2">
-                {briefContent.topActions.map((a, i) => (
+                {brief.topActions.map((a, i) => (
                   <li key={i} className="flex max-w-[900px] items-start gap-3 rounded-xl bg-white/[0.03] px-3 py-2.5">
                     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#0a84ff]/20 text-[12px] font-semibold text-[#64a8ff]">
                       {i + 1}
@@ -172,7 +217,7 @@ export function Reports() {
             </div>
             <div className="rounded-2xl border border-[#ff9f0a]/25 bg-[#ff9f0a]/10 p-4">
               <h3 className="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#ffb340]">What happens if we do nothing?</h3>
-              <p className="text-[14px] leading-relaxed text-war-text-secondary">{briefContent.ifNoAction}</p>
+              <p className="text-[14px] leading-relaxed text-war-text-secondary">{brief.ifNoAction}</p>
             </div>
             <div className="flex items-center gap-2.5">
               <span className="text-[12px] font-medium text-war-text-muted">Current status</span>
@@ -193,7 +238,7 @@ export function Reports() {
             {reports.map((report) => (
               <div key={report.id} className="flex items-start gap-3.5 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4 transition hover:border-white/[0.14] hover:bg-white/[0.05]">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/[0.07]">
-                  <FileText size={18} className="text-war-text-secondary" />
+                  <GIcon name="description" size={18} className="text-war-text-secondary" />
                 </div>
                 <div className="flex-1">
                   <div className="mb-0.5 flex flex-wrap items-center gap-2">
@@ -207,13 +252,13 @@ export function Reports() {
                   <p className="mb-2.5 mt-1 text-[13px] leading-relaxed text-war-text-secondary">{report.description}</p>
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-1.5 text-[12px] tabular-nums text-war-text-muted">
-                      <Clock size={12} /> {report.lastGenerated}
+                      <GIcon name="schedule" size={12} /> {report.lastGenerated}
                     </span>
                     <button
                       onClick={() => exportReport(report.id, report.title, report.subtitle, report.description)}
                       className="apple-button flex items-center gap-1 bg-white/10 px-3 py-1.5 text-[13px] text-white hover:bg-white/15"
                     >
-                      <Download size={12} /> Export
+                      <GIcon name="download" size={12} /> Export
                     </button>
                   </div>
                 </div>
@@ -223,14 +268,18 @@ export function Reports() {
         </div>
 
         {/* Live News Feed */}
-        <ReportsLiveSection />
+        <ReportsLiveSection news={liveNews} isLive={liveOk} lastUpdated={liveUpdated} isLoading={liveLoading} />
       </div>
     </div>
   );
 }
 
-function ReportsLiveSection() {
-  const { news, isLive, lastUpdated, isLoading } = useLiveData();
+function ReportsLiveSection({ news, isLive, lastUpdated, isLoading }: {
+  news: { title: string; link: string; pubDate: string; source: string }[];
+  isLive: boolean;
+  lastUpdated: string;
+  isLoading: boolean;
+}) {
 
   if (isLoading) {
     return (
@@ -253,7 +302,7 @@ function ReportsLiveSection() {
           <span className="section-title">Live entertainment news</span>
           {isLive && (
             <span className="flex items-center gap-1.5 rounded-full bg-[#30d158]/15 px-2.5 py-1">
-              <Radio size={10} className="text-[#30d158] status-pulse" />
+              <GIcon name="radio" size={10} className="text-[#30d158] status-pulse" />
               <span className="text-[11px] font-semibold text-[#30d158]">Live</span>
             </span>
           )}
@@ -294,7 +343,7 @@ function ReportsLiveSection() {
                   </span>
                 </div>
               </div>
-              <ExternalLink size={14} className="mt-1 shrink-0 text-war-text-muted opacity-0 transition group-hover:opacity-100" />
+              <GIcon name="open_in_new" size={14} className="mt-1 shrink-0 text-war-text-muted opacity-0 transition group-hover:opacity-100" />
             </a>
           );
         })}

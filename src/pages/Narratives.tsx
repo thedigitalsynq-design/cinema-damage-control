@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { clsx } from 'clsx';
-import { Hash, X } from 'lucide-react';
+import { GIcon } from '../components/GIcon';
 import { narratives } from '../data/mockData';
+import { useLiveData } from '../hooks/useLiveData';
+import { useProject } from '../components/ProjectContext';
 import type { Narrative } from '../data/types';
 
 function NarrativeCard({ narrative, onClick }: { narrative: Narrative; onClick: () => void }) {
@@ -47,7 +49,7 @@ function NarrativeCard({ narrative, onClick }: { narrative: Narrative; onClick: 
       <div className="flex flex-wrap gap-1.5">
         {narrative.hashtags.slice(0, 3).map((tag) => (
           <span key={tag} className="flex items-center gap-1 rounded-full bg-white/[0.07] px-2.5 py-1 text-[12px] text-war-text-secondary">
-            <Hash size={11} /> {tag}
+            <GIcon name="tag" size={11} /> {tag}
           </span>
         ))}
       </div>
@@ -84,7 +86,7 @@ function NarrativeDetail({ narrative, onClose }: { narrative: Narrative; onClose
             <h2 className="mt-0.5 text-[16px] font-semibold tracking-tight text-white">{narrative.title}</h2>
           </div>
           <button onClick={onClose} aria-label="Close" className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-war-text-secondary transition hover:bg-white/20 hover:text-white active:scale-95">
-            <X size={14} />
+            <GIcon name="close" size={14} />
           </button>
         </div>
 
@@ -134,7 +136,7 @@ function NarrativeDetail({ narrative, onClose }: { narrative: Narrative; onClose
             <div className="flex flex-wrap gap-1.5">
               {narrative.hashtags.map((tag) => (
                 <span key={tag} className="flex items-center gap-1 rounded-full bg-white/[0.07] px-3 py-1.5 text-[13px] text-war-text-secondary">
-                  <Hash size={12} /> {tag}
+                  <GIcon name="tag" size={12} /> {tag}
                 </span>
               ))}
             </div>
@@ -147,6 +149,9 @@ function NarrativeDetail({ narrative, onClose }: { narrative: Narrative; onClose
 
 export function Narratives() {
   const [selected, setSelected] = useState<Narrative | null>(null);
+  const { project } = useProject();
+  const { stats, isLive } = useLiveData(project.keywords.join(','));
+  const liveTerms = isLive && stats ? stats.trending : [];
 
   return (
     <div className="flex-1 overflow-y-auto px-6 py-6 lg:px-8">
@@ -154,8 +159,35 @@ export function Narratives() {
         <div className="pb-1">
           <p className="text-[13px] font-medium text-war-text-muted">Cinema Damage Control Room</p>
           <h1 className="apple-title mt-0.5">Narratives</h1>
-          <p className="apple-subhead mt-1">Major storylines shaping Project Veera.</p>
+          <p className="apple-subhead mt-1">Major storylines shaping the conversation.</p>
         </div>
+
+        {liveTerms.length > 0 && stats && (
+          <div className="glass-panel p-5">
+            <div className="mb-4 flex items-baseline justify-between">
+              <span className="section-title">Live narrative map</span>
+              <span className="apple-footnote">mined from {stats.total} headlines</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+              {liveTerms.map((t) => {
+                const share = stats.total > 0 ? Math.round((t.mentions / stats.total) * 100) : 0;
+                return (
+                  <div key={t.term} className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-4">
+                    <div className="mb-1 flex items-center gap-1 truncate text-[13px] font-semibold capitalize text-white" title={t.term}>
+                      <GIcon name="tag" size={12} className="shrink-0 text-[#64a8ff]" />
+                      <span className="truncate">{t.term}</span>
+                    </div>
+                    <div className="text-[20px] font-bold tabular-nums tracking-tight text-white">{share}<span className="text-[13px] font-medium text-war-text-muted">%</span></div>
+                    <div className="mt-0.5 text-[12px] tabular-nums text-war-text-muted">{t.mentions} stories · {t.negPct}% neg</div>
+                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]">
+                      <div className="h-full rounded-full bg-[#0a84ff]" style={{ width: `${Math.min(100, share * 3)}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {narratives.map((narrative) => (

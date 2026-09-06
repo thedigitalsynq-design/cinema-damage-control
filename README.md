@@ -1,32 +1,53 @@
-# React + TypeScript + Vite
+# Cinema Damage Control Room
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Indian cinema crisis & decision-intelligence platform. Tracks films, detects damage,
+diagnoses why, recommends actions, and measures whether interventions worked —
+**DETECT → ACT → MEASURE → LEARN**.
 
-Currently, two official plugins are available:
+## Run it
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```powershell
+npm install
+npm run dev      # website → http://localhost:5173/
+npm run server   # live data API → http://localhost:3001 (second terminal)
+npm run start    # both at once
+npm run build    # production build (type-check + Vite)
+npm run lint     # oxlint, must stay 0 errors
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Without the backend the room runs in clearly-labelled **Simulation mode**; with it,
+the header flips to **Live** and every measured panel switches to real feed data.
+
+## Architecture
+
+- `server.js` — Express 5 API + static host. Polls Google News RSS on a **5-minute
+  cadence** (`/api/news?topic=`, `/api/trending`, `/api/box-office`, `/api/search`,
+  `/api/article`, `/api/health`). Topic-parameterised, relevance-filtered, cached.
+- `src/data/apiService.ts` — fetch layer + `computeLiveStats()` (sentiment share,
+  hourly velocity, reach sums, 12 hourly buckets, headline term-mining).
+- `src/data/damage.ts` — multi-film damage model, **isolated from UI** so real
+  box-office/occupancy APIs can replace modelled entries later.
+- `src/data/mockData.ts` — simulation dataset for offline demos.
+- State (all local, no store library): `PhaseContext` (release phase),
+  `ProjectContext` (tracked film), `RoomState` (intervention pressure + decay),
+  `Toaster` (feedback). Route-level code splitting keeps the initial bundle small.
+
+## Data provenance (shown in the UI, never hidden)
+
+| Label | Meaning |
+|---|---|
+| LIVE | Measured from the RSS feed this session |
+| MODELLED | Illustrative estimate, not industry data |
+| SIMULATION | Offline demo dataset |
+| ESTIMATED | Heuristic (reach tiers, keyword sentiment) |
+
+Keyword sentiment covers English headlines; regional scripts read neutral.
+Reach is estimated by outlet tier, not measured impressions.
+
+## Deploy
+
+- **GitHub Pages** (static, Simulation mode): push to `main` → `.github/workflows/deploy.yml`
+  builds and deploys. Enable **Settings → Pages → Source: GitHub Actions**.
+- **Full stack with live data** (e.g. Render free tier): connect the repo, it
+  auto-detects `render.yaml` (`npm ci && npm run build` → `node server.js`).
+  `PORT` env is honoured; `/api` is same-origin so no CORS setup is needed.

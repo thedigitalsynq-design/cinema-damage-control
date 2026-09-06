@@ -1,8 +1,10 @@
 import { clsx } from 'clsx';
-import { ArrowRight } from 'lucide-react';
+import { GIcon } from '../components/GIcon';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { useLiveData } from '../hooks/useLiveData';
+import { useProject } from '../components/ProjectContext';
 
-const recoveryData = [
+export const recoveryData = [
   { day: 'Day 1', risk: 72, negative: 78, positive: 8, confidence: 12 },
   { day: 'Day 2', risk: 68, negative: 72, positive: 14, confidence: 18 },
   { day: 'Day 3', risk: 58, negative: 62, positive: 22, confidence: 28 },
@@ -54,14 +56,34 @@ const recoveryMetrics = [
 ];
 
 export function Recovery() {
+  const { project } = useProject();
+  const { stats, isLive, lastUpdated } = useLiveData(project.keywords.join(','));
+  const live = isLive && stats;
+
   return (
     <div className="flex-1 overflow-y-auto px-6 py-6 lg:px-8">
       <div className="mx-auto max-w-[1400px] space-y-5">
         <div className="pb-1">
           <p className="text-[13px] font-medium text-war-text-muted">Cinema Damage Control Room</p>
           <h1 className="apple-title mt-0.5">Recovery</h1>
-          <p className="apple-subhead mt-1">Reputation recovery trajectory for Project Veera.</p>
+          <p className="apple-subhead mt-1">Post-crisis reputation recovery trajectory.</p>
         </div>
+
+        {live && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl border border-[#30d158]/20 bg-[#30d158]/[0.07] px-4 py-2.5">
+            <span className="flex items-center gap-1.5 text-[12px] font-semibold text-[#30d158]">
+              <GIcon name="radio" size={11} className="status-pulse" /> Live now
+            </span>
+            <span className="text-[12px] tabular-nums text-war-text-secondary">
+              {live.negPct}% negative across {live.total} stories · model trajectory below
+            </span>
+            {lastUpdated && (
+              <span className="ml-auto text-[11px] tabular-nums text-war-text-muted">
+                updated {new Date(lastUpdated).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Current Status */}
         <div className="glass-panel p-5">
@@ -106,7 +128,7 @@ export function Recovery() {
                   </div>
                 </div>
                 {i < phases.length - 1 && (
-                  <ArrowRight size={15} className="hidden shrink-0 self-center text-war-text-muted md:block" />
+                  <GIcon name="arrow_forward" size={15} className="hidden shrink-0 self-center text-war-text-muted md:block" />
                 )}
               </div>
             ))}

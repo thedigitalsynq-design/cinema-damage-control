@@ -1,13 +1,15 @@
-import { X, AlertTriangle, Clock, Eye, Shield, ChevronRight } from 'lucide-react';
+import { GIcon } from './GIcon';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { StatusBadge } from './ui/StatusBadge';
 import { useToast } from './Toaster';
+import { useRoom } from './RoomState';
 import type { Incident } from '../data/types';
 
 export function IncidentDrawer({ incident, onClose }: { incident: Incident; onClose: () => void }) {
   const navigate = useNavigate();
   const toast = useToast();
+  const { apply } = useRoom();
   return (
     <>
       <motion.div
@@ -36,7 +38,7 @@ export function IncidentDrawer({ incident, onClose }: { incident: Incident; onCl
           <div className="flex items-center gap-2.5">
             <StatusBadge severity={incident.severity} size="md" />
             <button onClick={onClose} aria-label="Close" className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-war-text-secondary transition hover:bg-white/20 hover:text-white active:scale-95">
-              <X size={14} />
+              <GIcon name="close" size={14} />
             </button>
           </div>
         </div>
@@ -47,7 +49,7 @@ export function IncidentDrawer({ incident, onClose }: { incident: Incident; onCl
             <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-4">
               <div className="metric-label mb-1">First detected</div>
               <div className="flex items-center gap-1.5">
-                <Clock size={13} className="text-war-text-muted" />
+                <GIcon name="schedule" size={13} className="text-war-text-muted" />
                 <span className="text-[17px] font-semibold tracking-tight text-white">{incident.firstDetected}</span>
               </div>
             </div>
@@ -58,7 +60,7 @@ export function IncidentDrawer({ incident, onClose }: { incident: Incident; onCl
             <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-4">
               <div className="metric-label mb-1">Est. reach</div>
               <div className="flex items-center gap-1.5">
-                <Eye size={13} className="text-war-text-muted" />
+                <GIcon name="visibility" size={13} className="text-war-text-muted" />
                 <span className="text-[17px] font-semibold tracking-tight text-white">{incident.reach}</span>
               </div>
             </div>
@@ -69,7 +71,7 @@ export function IncidentDrawer({ incident, onClose }: { incident: Incident; onCl
             <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-4">
               <div className="metric-label mb-1">Authority</div>
               <div className="flex items-center gap-1.5">
-                <Shield size={13} className="text-war-text-muted" />
+                <GIcon name="shield" size={13} className="text-war-text-muted" />
                 <span className="text-[17px] font-semibold tracking-tight text-white">{incident.authorityScore}</span>
               </div>
             </div>
@@ -82,7 +84,7 @@ export function IncidentDrawer({ incident, onClose }: { incident: Incident; onCl
           {/* Recommendation Banner */}
           <div className="rounded-2xl border border-[#ff453a]/25 bg-[#ff453a]/10 px-4 py-3.5">
             <div className="flex items-center gap-2.5">
-              <AlertTriangle size={16} className="shrink-0 text-[#ff6961]" />
+              <GIcon name="warning" size={16} className="shrink-0 text-[#ff6961]" />
               <span className="text-[13px] font-semibold tracking-[-0.006em] text-[#ff6961]">{incident.recommendation}</span>
             </div>
           </div>
@@ -125,7 +127,8 @@ export function IncidentDrawer({ incident, onClose }: { incident: Incident; onCl
           <div className="flex gap-2.5 pt-2">
             <button
               onClick={() => {
-                toast(`Response plan started for ${incident.code}`, 'success');
+                apply('plan');
+                toast(`Response plan started for ${incident.code} · risk −3`, 'success');
                 onClose();
                 navigate('/response');
               }}
@@ -135,12 +138,13 @@ export function IncidentDrawer({ incident, onClose }: { incident: Incident; onCl
             </button>
             <button
               onClick={() => {
+                apply('escalate');
                 toast(`Escalated ${incident.code} to C-Suite`, 'warn');
                 onClose();
               }}
               className="apple-button flex items-center gap-1 bg-white/10 px-4 py-2.5 text-[14px] text-white hover:bg-white/15"
             >
-              Escalate <ChevronRight size={14} />
+              Escalate <GIcon name="chevron_right" size={14} />
             </button>
           </div>
         </div>

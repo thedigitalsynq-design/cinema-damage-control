@@ -146,3 +146,19 @@ export interface Activity {
   target: string;
   time: string;
 }
+
+export type LeakStatus = 'ACTIVE' | 'TAKEDOWN_SENT' | 'REMOVED';
+export type LeakPlatform = 'STREAMING' | 'TORRENT' | 'TELEGRAM' | 'FILE_HOST' | 'SOCIAL';
+
+export interface LeakLink {
+  id: string;
+  host: string;
+  url: string;
+  platform: LeakPlatform;
+  quality: 'CAM' | 'HDTS' | 'HDTC' | 'HD' | '1080P' | '4K';
+  threat: Severity;
+  detected: string;
+  views: string;
+  status: LeakStatus;
+  statusUpdated: string;
+}

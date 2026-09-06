@@ -2,9 +2,10 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vite'
 
-export default defineConfig({
-  // Served from /cinema-damage-control/ on GitHub Pages (project site).
-  base: '/cinema-damage-control/',
+export default defineConfig(({ command }) => ({
+  // Dev stays at root for convenience; production builds use the
+  // GitHub Pages project subpath (also served by server.js).
+  base: command === 'serve' ? '/' : '/cinema-damage-control/',
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
@@ -14,4 +15,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))

@@ -1,5 +1,4 @@
 import type {
-  Film,
   CrisisScore,
   TimelineEvent,
   Incident,
@@ -9,17 +8,8 @@ import type {
   MediaStory,
   Influencer,
   Alert,
-  Activity,
+  LeakLink,
 } from './types';
-
-export const currentFilm: Film = {
-  id: 'veera-2026',
-  title: 'VEERA',
-  genre: 'Action / Drama',
-  languages: ['Hindi', 'Telugu', 'Tamil', 'Kannada'],
-  releaseDate: '18 September 2026',
-  status: 'PRE-RELEASE',
-};
 
 export const crisisScore: CrisisScore = {
   overall: 72,
@@ -55,7 +45,7 @@ export const timelineEvents: TimelineEvent[] = [
     id: 't3',
     time: '19:42',
     title: 'Regional hashtag begins trending',
-    description: '#BoycottVeera has entered top 10 trending on X India. Currently at #7. Regional variants emerging in Telugu and Tamil.',
+    description: '#BoycottToxic has entered top 10 trending on X India. Currently at #7. Regional variants emerging in Telugu and Tamil.',
     severity: 'HIGH',
     type: 'HASHTAG',
     reach: '4.2M',
@@ -64,7 +54,7 @@ export const timelineEvents: TimelineEvent[] = [
     id: 't4',
     time: '19:31',
     title: 'Major entertainment portal publishes article',
-    description: 'FilmBeat published "Veera Star\'s Controversial Remarks Spark Outrage" — article has been shared 12,000 times in 30 minutes.',
+    description: 'FilmBeat published "Toxic Star\'s Controversial Remarks Spark Outrage" — article has been shared 12,000 times in 30 minutes.',
     severity: 'HIGH',
     type: 'NEWS_ALERT',
     source: 'FilmBeat',
@@ -131,7 +121,7 @@ export const incidents: Incident[] = [
     authorityScore: 72,
     owner: 'Rahul Mehta',
     recommendation: 'MONITOR CLOSELY',
-    whatWeKnow: '#BoycottVeera trending at #7 on X India. Regional variants emerging. Coordinated posting patterns detected across 47 accounts.',
+    whatWeKnow: '#BoycottToxic trending at #7 on X India. Regional variants emerging. Coordinated posting patterns detected across 47 accounts.',
     whatWeDontKnow: [
       'Originating account unidentified',
       'Whether organic or manufactured',
@@ -243,7 +233,7 @@ export const signals: Signal[] = [
   {
     id: 'sig-3',
     type: 'HASHTAG',
-    title: '#BoycottVeera enters trending',
+    title: '#BoycottToxic enters trending',
     source: 'X India',
     time: '18 min ago',
     velocity: '+94% / 20 min',
@@ -311,7 +301,7 @@ export const narratives: Narrative[] = [
     velocity: '+42%',
     posts: 184000,
     influencers: 47,
-    hashtags: ['#BoycottVeera', '#VeeraControversy', '#ActorStatement'],
+    hashtags: ['#BoycottToxic', '#ToxicControversy', '#ActorStatement'],
     origin: 'Edited interview clip on X',
     amplifiers: ['@FilmCriticRohan', '@BollywoodInsider', 'FilmBeat'],
     audience: 'Entertainment followers, political commentators',
@@ -327,7 +317,7 @@ export const narratives: Narrative[] = [
     velocity: '+18%',
     posts: 112000,
     influencers: 23,
-    hashtags: ['#VeeraPolitics', '#FilmAndPolitics'],
+    hashtags: ['#ToxicPolitics', '#FilmAndPolitics'],
     origin: 'Political commentary blog',
     amplifiers: ['Political commentators', 'Regional media'],
     audience: 'Political followers, regional audiences',
@@ -343,7 +333,7 @@ export const narratives: Narrative[] = [
     velocity: '+8%',
     posts: 96000,
     influencers: 15,
-    hashtags: ['#VeeraReview', '#Disappointed'],
+    hashtags: ['#ToxicReview', '#Disappointed'],
     origin: 'Pre-release screening reviews',
     amplifiers: ['Film critics', 'Review aggregators'],
     audience: 'Film enthusiasts, general audience',
@@ -359,7 +349,7 @@ export const narratives: Narrative[] = [
     velocity: '+94%',
     posts: 74000,
     influencers: 31,
-    hashtags: ['#BoycottVeera', '#BoycottBollywood'],
+    hashtags: ['#BoycottToxic', '#BoycottBollywood'],
     origin: 'Coordinated campaign',
     amplifiers: ['Organized accounts', 'Political pages'],
     audience: 'Political followers, opposition groups',
@@ -375,7 +365,7 @@ export const narratives: Narrative[] = [
     velocity: '+5%',
     posts: 37000,
     influencers: 5,
-    hashtags: ['#VeeraPricing', '#ExpensiveTickets'],
+    hashtags: ['#ToxicPricing', '#ExpensiveTickets'],
     origin: 'Forum discussions',
     amplifiers: ['Consumer forums', 'Regional groups'],
     audience: 'General moviegoers',
@@ -391,7 +381,7 @@ export const narratives: Narrative[] = [
     velocity: '+12%',
     posts: 32000,
     influencers: 18,
-    hashtags: ['#WeSupportVeera', '#VeeraFans'],
+    hashtags: ['#WeSupportToxic', '#ToxicFans'],
     origin: 'Fan community',
     amplifiers: ['Fan pages', 'Support groups'],
     audience: 'Core fans',
@@ -408,7 +398,7 @@ export const socialPosts: SocialPost[] = [
     author: 'Film Critic Rohan',
     handle: '@FilmCriticRohan',
     followers: '1.2M',
-    text: 'This 46-second clip is devastating. The lead actor\'s statement is being taken completely out of context, but the damage is done. #BoycottVeera',
+    text: 'This 46-second clip is devastating. The lead actor\'s statement is being taken completely out of context, but the damage is done. #BoycottToxic',
     engagement: '45.2K',
     reach: '2.7M',
     sentiment: 'NEGATIVE',
@@ -436,7 +426,7 @@ export const socialPosts: SocialPost[] = [
     author: 'Film Talk India',
     handle: '@FilmTalkIndia',
     followers: '2.1M',
-    text: 'Full breakdown of the Veera controversy in our latest reel. This is getting out of hand.',
+    text: 'Full breakdown of the Toxic controversy in our latest reel. This is getting out of hand.',
     engagement: '89.4K',
     reach: '4.2M',
     sentiment: 'NEGATIVE',
@@ -450,7 +440,7 @@ export const socialPosts: SocialPost[] = [
     author: 'Cinema Scope',
     handle: '@CinemaScope',
     followers: '3.4M',
-    text: 'VEERA CONTROVERSY: Full Analysis | What really happened and why everyone is angry',
+    text: 'TOXIC CONTROVERSY: Full Analysis | What really happened and why everyone is angry',
     engagement: '124K',
     reach: '6.8M',
     sentiment: 'NEGATIVE',
@@ -464,7 +454,7 @@ export const socialPosts: SocialPost[] = [
     author: 'u/BollywoodGossip',
     handle: 'u/BollywoodGossip',
     followers: '45K',
-    text: 'The Veera situation is a masterclass in how not to handle a PR crisis. Studio silence is deafening.',
+    text: 'The Toxic situation is a masterclass in how not to handle a PR crisis. Studio silence is deafening.',
     engagement: '2.1K',
     reach: '180K',
     sentiment: 'NEGATIVE',
@@ -475,10 +465,10 @@ export const socialPosts: SocialPost[] = [
   {
     id: 'sp6',
     platform: 'X',
-    author: 'Veera Fan Club',
-    handle: '@VeeraFansOfficial',
+    author: 'Toxic Fan Club',
+    handle: '@ToxicFansOfficial',
     followers: '340K',
-    text: 'Stand with Veera. This is a manufactured controversy. The full interview shows a completely different picture. #WeSupportVeera',
+    text: 'Stand with Toxic. This is a manufactured controversy. The full interview shows a completely different picture. #WeSupportToxic',
     engagement: '12.8K',
     reach: '890K',
     sentiment: 'POSITIVE',
@@ -492,7 +482,7 @@ export const mediaStories: MediaStory[] = [
   {
     id: 'ms1',
     publication: 'FilmBeat',
-    headline: 'Veera Star\'s Controversial Remarks Spark Outrage',
+    headline: 'Toxic Star\'s Controversial Remarks Spark Outrage',
     timestamp: '19:31 IST',
     reach: '3.8M',
     sentiment: 'NEGATIVE',
@@ -502,7 +492,7 @@ export const mediaStories: MediaStory[] = [
   {
     id: 'ms2',
     publication: 'Bollywood Life',
-    headline: 'Boycott Veera: Social Media Erupts Over Actor Statement',
+    headline: 'Boycott Toxic: Social Media Erupts Over Actor Statement',
     timestamp: '19:45 IST',
     reach: '2.4M',
     sentiment: 'NEGATIVE',
@@ -512,7 +502,7 @@ export const mediaStories: MediaStory[] = [
   {
     id: 'ms3',
     publication: 'Times of India - Entertainment',
-    headline: 'Veera Pre-Release Buzz Turns Negative Amid Controversy',
+    headline: 'Toxic Pre-Release Buzz Turns Negative Amid Controversy',
     timestamp: '19:52 IST',
     reach: '5.2M',
     sentiment: 'NEGATIVE',
@@ -522,7 +512,7 @@ export const mediaStories: MediaStory[] = [
   {
     id: 'ms4',
     publication: 'India Today - Cinema',
-    headline: 'What Went Wrong for Veera? A Timeline of Events',
+    headline: 'What Went Wrong for Toxic? A Timeline of Events',
     timestamp: '20:00 IST',
     reach: '4.1M',
     sentiment: 'NEUTRAL',
@@ -532,7 +522,7 @@ export const mediaStories: MediaStory[] = [
   {
     id: 'ms5',
     publication: 'Hindustan Times',
-    headline: 'Veera Controversy: Studio yet to Respond',
+    headline: 'Toxic Controversy: Studio yet to Respond',
     timestamp: '20:02 IST',
     reach: '6.8M',
     sentiment: 'NEGATIVE',
@@ -605,7 +595,7 @@ export const influencers: Influencer[] = [
   {
     id: 'inf6',
     name: 'Arjun Mehta',
-    handle: '@VeeraFansOfficial',
+    handle: '@ToxicFansOfficial',
     category: 'FAN_ACCOUNT',
     audience: '340K',
     engagement: '8.4%',
@@ -647,14 +637,6 @@ export const alerts: Alert[] = [
   { id: 'a4', title: 'Negative sentiment increased 14% in 20 minutes', severity: 'HIGH', time: '12 min ago', read: true },
   { id: 'a5', title: 'New media article detected', severity: 'MEDIUM', time: '18 min ago', read: true },
   { id: 'a6', title: 'Influencer post crossed 500K views', severity: 'HIGH', time: '22 min ago', read: true },
-];
-
-export const activities: Activity[] = [
-  { id: 'act1', user: 'Priya Sharma', action: 'Opened incident', target: 'CW-042', time: '1 min ago' },
-  { id: 'act2', user: 'Rahul Mehta', action: 'Assigned to', target: 'CW-043', time: '3 min ago' },
-  { id: 'act3', user: 'Ananya Reddy', action: 'Updated response for', target: 'CW-044', time: '5 min ago' },
-  { id: 'act4', user: 'System', action: 'Auto-detected signal', target: 'SIG-007', time: '6 min ago' },
-  { id: 'act5', user: 'Karan Bhatia', action: 'Commented on', target: 'CW-045', time: '8 min ago' },
 ];
 
 export const audienceSegments = [
@@ -733,12 +715,6 @@ export const riskTrajectoryData = [
   { time: '20:00', risk: 72 },
 ];
 
-export const narrativeShareData = narratives.map(n => ({
-  name: n.title,
-  value: n.share,
-  sentiment: n.sentiment,
-}));
-
 export const platformData = [
   { platform: 'X', mentions: 520000, engagement: '4.2%', sentiment: -48, reach: '18.4M' },
   { platform: 'INSTAGRAM', mentions: 380000, engagement: '6.8%', sentiment: -38, reach: '12.8M' },
@@ -747,4 +723,15 @@ export const platformData = [
   { platform: 'FACEBOOK', mentions: 340000, engagement: '1.4%', sentiment: -28, reach: '6.4M' },
   { platform: 'NEWS', mentions: 180000, engagement: '—', sentiment: -52, reach: '22.4M' },
   { platform: 'WEB', mentions: 112000, engagement: '—', sentiment: -24, reach: '4.8M' },
+];
+
+export const leakLinks: LeakLink[] = [
+  { id: 'leak-1', host: 'streamvault.to', url: 'streamvault.to/watch/toxic-2026-hd', platform: 'STREAMING', quality: 'HD', threat: 'CRITICAL', detected: '18:52', views: '1.2M', status: 'ACTIVE', statusUpdated: '18:52' },
+  { id: 'leak-2', host: 'torrentbay.cc', url: 'torrentbay.cc/t/toxic-2026-1080p', platform: 'TORRENT', quality: '1080P', threat: 'CRITICAL', detected: '19:05', views: '860K', status: 'ACTIVE', statusUpdated: '19:05' },
+  { id: 'leak-3', host: 't.me/toxic_hd_print', url: 't.me/toxic_hd_print', platform: 'TELEGRAM', quality: 'HD', threat: 'HIGH', detected: '19:14', views: '214K', status: 'TAKEDOWN_SENT', statusUpdated: '19:40' },
+  { id: 'leak-4', host: 'filedrive.io', url: 'filedrive.io/d/toxic-cam-rip', platform: 'FILE_HOST', quality: 'CAM', threat: 'MEDIUM', detected: '19:22', views: '48K', status: 'ACTIVE', statusUpdated: '19:22' },
+  { id: 'leak-5', host: 'cineleakhd.net', url: 'cineleakhd.net/toxic-2026-hdts', platform: 'STREAMING', quality: 'HDTS', threat: 'HIGH', detected: '19:31', views: '392K', status: 'TAKEDOWN_SENT', statusUpdated: '19:55' },
+  { id: 'leak-6', host: 'rapidsharex.com', url: 'rapidsharex.com/f/toxic-4k-hdr', platform: 'FILE_HOST', quality: '4K', threat: 'CRITICAL', detected: '19:47', views: '178K', status: 'ACTIVE', statusUpdated: '19:47' },
+  { id: 'leak-7', host: 'desiboard.social', url: 'desiboard.social/p/toxic-full-movie', platform: 'SOCIAL', quality: 'HDTC', threat: 'MEDIUM', detected: '20:02', views: '96K', status: 'REMOVED', statusUpdated: '20:20' },
+  { id: 'leak-8', host: 't.me/cine_dump', url: 't.me/cine_dump/4412', platform: 'TELEGRAM', quality: 'CAM', threat: 'LOW', detected: '20:11', views: '12K', status: 'REMOVED', statusUpdated: '20:26' },
 ];

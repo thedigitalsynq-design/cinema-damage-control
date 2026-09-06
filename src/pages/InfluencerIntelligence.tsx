@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { clsx } from 'clsx';
 import { influencers } from '../data/mockData';
+import { LiveBanner } from '../components/LiveBanner';
+import { useLiveData } from '../hooks/useLiveData';
+import { useProject } from '../components/ProjectContext';
 
 const categoryLabels: Record<string, string> = {
   ACTOR: 'Actor',
@@ -16,6 +19,17 @@ export function InfluencerIntelligence() {
   const [filter, setFilter] = useState<string>('ALL');
   const categories = ['ALL', 'ACTOR', 'CREATOR', 'JOURNALIST', 'CRITIC', 'FAN_ACCOUNT', 'POLITICAL_FIGURE', 'ENTERTAINMENT_PAGE'];
   const filtered = filter === 'ALL' ? influencers : influencers.filter((i) => i.category === filter);
+  const { project } = useProject();
+  const { liveIncidents, isLive } = useLiveData(project.keywords.join(','));
+
+  const surfacing = (() => {
+    if (!isLive) return [];
+    const counts = new Map<string, number>();
+    for (const inc of liveIncidents as { entities?: string[] }[]) {
+      for (const e of inc.entities || []) counts.set(e, (counts.get(e) || 0) + 1);
+    }
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
+  })();
 
   return (
     <div className="flex-1 overflow-y-auto px-6 py-6 lg:px-8">
@@ -24,10 +38,29 @@ export function InfluencerIntelligence() {
           <div>
             <p className="text-[13px] font-medium text-war-text-muted">Cinema Damage Control Room</p>
             <h1 className="apple-title mt-0.5">Influencers</h1>
-            <p className="apple-subhead mt-1">Key voices shaping Project Veera.</p>
+            <p className="apple-subhead mt-1">Key voices shaping the conversation.</p>
           </div>
           <span className="rounded-full bg-white/[0.07] px-3 py-1.5 text-[12px] font-medium tabular-nums text-war-text-secondary">{filtered.length} voices</span>
         </div>
+
+        <LiveBanner />
+
+        {surfacing.length > 0 && (
+          <div className="glass-panel p-5">
+            <div className="mb-3 flex items-baseline justify-between">
+              <span className="section-title">Names surfacing in live coverage</span>
+              <span className="apple-footnote">extracted from headlines</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {surfacing.map(([name, n]) => (
+                <span key={name} className="flex items-center gap-1.5 rounded-full bg-white/[0.07] px-3 py-1.5 text-[13px] text-war-text-secondary">
+                  {name}
+                  <span className="font-semibold tabular-nums text-white">{n}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Segmented filter */}
         <div className="flex max-w-full gap-1 overflow-x-auto rounded-full bg-white/[0.07] p-1">

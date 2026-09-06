@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CheckCircle2, Info, AlertTriangle } from 'lucide-react';
 import { clsx } from 'clsx';
+import { GIcon } from './GIcon';
 
 type Tone = 'success' | 'info' | 'warn';
 
@@ -20,10 +20,10 @@ export function useToast(): PushToast {
   return useContext(ToastContext);
 }
 
-const toneStyles: Record<Tone, { icon: typeof Info; chip: string }> = {
-  success: { icon: CheckCircle2, chip: 'text-[#30d158]' },
-  info: { icon: Info, chip: 'text-[#64a8ff]' },
-  warn: { icon: AlertTriangle, chip: 'text-[#ffb340]' },
+const toneStyles: Record<Tone, { icon: string; chip: string }> = {
+  success: { icon: 'check_circle', chip: 'text-[#30d158]' },
+  info: { icon: 'info', chip: 'text-[#64a8ff]' },
+  warn: { icon: 'warning', chip: 'text-[#ffb340]' },
 };
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
@@ -44,7 +44,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       <div className="pointer-events-none fixed bottom-6 left-1/2 z-[200] flex w-full max-w-md -translate-x-1/2 flex-col items-center gap-2 px-4">
         <AnimatePresence>
           {toasts.map((t) => {
-            const { icon: Icon, chip } = toneStyles[t.tone];
+            const { icon, chip } = toneStyles[t.tone];
             return (
               <motion.div
                 key={t.id}
@@ -55,7 +55,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 transition={{ type: 'spring', stiffness: 420, damping: 32 }}
                 className="pointer-events-auto flex w-auto max-w-full items-center gap-2.5 rounded-2xl border border-white/10 bg-[#1c1c1e]/95 py-2.5 pl-3.5 pr-4 shadow-[0_16px_48px_rgba(0,0,0,0.6)] backdrop-blur-2xl"
               >
-                <Icon size={16} className={clsx('shrink-0', chip)} />
+                <GIcon name={icon} size={17} className={clsx('shrink-0', chip)} />
                 <span className="text-[13px] font-medium leading-snug text-white">{t.message}</span>
               </motion.div>
             );

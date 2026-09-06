@@ -2,28 +2,22 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { clsx } from 'clsx';
-import {
-  Search,
-  AlertTriangle,
-  GitBranch,
-  Users,
-  Send,
-  FileText,
-  Film,
-  Radio,
-  X,
-} from 'lucide-react';
+import { GIcon } from './GIcon';
 
 const commands = [
-  { id: 'search-incident', label: 'Search incident', icon: AlertTriangle, path: '/incidents', category: 'SEARCH' },
-  { id: 'search-narrative', label: 'Search narrative', icon: GitBranch, path: '/narratives', category: 'SEARCH' },
-  { id: 'search-influencer', label: 'Search influencer', icon: Users, path: '/influencers', category: 'SEARCH' },
-  { id: 'open-response', label: 'Open Response Center', icon: Send, path: '/response', category: 'NAVIGATION' },
-  { id: 'create-incident', label: 'Create incident', icon: AlertTriangle, path: '/incidents', category: 'ACTIONS' },
-  { id: 'generate-brief', label: 'Generate brief', icon: FileText, path: '/reports', category: 'ACTIONS' },
-  { id: 'export-report', label: 'Export report', icon: FileText, path: '/reports', category: 'ACTIONS' },
-  { id: 'change-film', label: 'Change film', icon: Film, path: '/', category: 'NAVIGATION' },
-  { id: 'view-alerts', label: 'View alerts', icon: Radio, path: '/signals', category: 'NAVIGATION' },
+  { id: 'search-incident', label: 'Search incident', icon: 'warning', path: '/incidents', category: 'SEARCH' },
+  { id: 'search-narrative', label: 'Search narrative', icon: 'account_tree', path: '/narratives', category: 'SEARCH' },
+  { id: 'search-influencer', label: 'Search influencer', icon: 'group', path: '/influencers', category: 'SEARCH' },
+  { id: 'open-response', label: 'Open Response Center', icon: 'send', path: '/response', category: 'NAVIGATION' },
+  { id: 'create-incident', label: 'Create incident', icon: 'warning', path: '/incidents', category: 'ACTIONS' },
+  { id: 'track-leak', label: 'Track pirated link', icon: 'shield', path: '/leaks', category: 'ACTIONS' },
+  { id: 'ask-analyst', label: 'Ask the analyst', icon: 'auto_awesome', path: '/analyst', category: 'ACTIONS' },
+  { id: 'view-films', label: 'View films damage board', icon: 'movie', path: '/films', category: 'NAVIGATION' },
+  { id: 'view-markets', label: 'View market health', icon: 'radio', path: '/markets', category: 'NAVIGATION' },
+  { id: 'generate-brief', label: 'Generate brief', icon: 'description', path: '/reports', category: 'ACTIONS' },
+  { id: 'export-report', label: 'Export report', icon: 'description', path: '/reports', category: 'ACTIONS' },
+  { id: 'change-film', label: 'Change film', icon: 'movie', path: '/', category: 'NAVIGATION' },
+  { id: 'view-alerts', label: 'View alerts', icon: 'radio', path: '/signals', category: 'NAVIGATION' },
 ];
 
 export function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -98,7 +92,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
         transition={{ type: 'spring', stiffness: 420, damping: 32 }}
       >
         <div className="flex items-center gap-3 border-b border-white/[0.08] px-5 py-4">
-          <Search size={17} className="shrink-0 text-war-text-muted" />
+          <GIcon name="search" size={19} className="shrink-0 text-war-text-muted" />
           <input
             ref={inputRef}
             type="text"
@@ -109,7 +103,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
             className="flex-1 bg-transparent text-[17px] font-normal tracking-tight text-white placeholder:text-war-text-muted outline-none"
           />
           <button onClick={onClose} aria-label="Close" className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-war-text-secondary transition hover:bg-white/20 hover:text-white">
-            <X size={13} />
+            <GIcon name="close" size={14} />
           </button>
         </div>
 
@@ -120,7 +114,6 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                 <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-war-text-muted">{category.toLowerCase()}</span>
               </div>
               {items.map((cmd) => {
-                const Icon = cmd.icon;
                 const idx = filtered.indexOf(cmd);
                 return (
                   <button
@@ -135,7 +128,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                     }}
                     onMouseEnter={() => setSelectedIndex(idx)}
                   >
-                    <Icon size={16} className={idx === selectedIndex ? 'text-white' : 'text-war-text-muted'} />
+                    <GIcon name={cmd.icon} size={18} className={idx === selectedIndex ? 'text-white' : 'text-war-text-muted'} />
                     <span className="text-[14px] font-normal">{cmd.label}</span>
                   </button>
                 );
@@ -143,7 +136,12 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
             </div>
           ))}
           {filtered.length === 0 && (
-            <div className="px-4 py-10 text-center text-[14px] text-war-text-muted">No results found</div>
+            <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/[0.07]">
+                <GIcon name="search_off" size={20} className="text-war-text-muted" />
+              </span>
+              <p className="text-[14px] text-war-text-muted">No results found</p>
+            </div>
           )}
         </div>
       </motion.div>
