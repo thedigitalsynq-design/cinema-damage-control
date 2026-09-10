@@ -8,7 +8,11 @@ export interface TrackedProject {
 }
 
 const DEFAULT_PROJECTS: TrackedProject[] = [
-  { id: 'toxic', title: 'TOXIC', subtitle: 'Yash · Geetu Mohandas', keywords: ['toxic', 'yash'] },
+  { id: 'toxic', title: 'TOXIC: A Fairy Tale', subtitle: 'Yash · Geetu Mohandas · KVN Productions', keywords: ['toxic', 'yash'] },
+  { id: 'war2', title: 'WAR 2', subtitle: 'Hrithik Roshan · Jr NTR · YRF Spy Universe', keywords: ['war 2', 'hrithik', 'jr ntr'] },
+  { id: 'kantara', title: 'KANTARA: Chapter 1', subtitle: 'Rishab Shetty · Hombale Films', keywords: ['kantara', 'rishab shetty'] },
+  { id: 'pushpa2', title: 'PUSHPA 2: The Rule', subtitle: 'Allu Arjun · Sukumar · Mythri Movie Makers', keywords: ['pushpa 2', 'allu arjun'] },
+  { id: 'avatar3', title: 'AVATAR: Fire & Ash', subtitle: 'James Cameron · 20th Century Studios', keywords: ['avatar 3', 'fire and ash'] },
 ];
 
 const PROJECTS_KEY = 'cdc-projects';
@@ -19,6 +23,7 @@ interface ProjectContextValue {
   project: TrackedProject;
   setActiveId: (id: string) => void;
   addProject: (title: string, keywords: string) => TrackedProject;
+  trackFilm: (film: { id: string; title: string; subtitle?: string; keywords: string[] }) => TrackedProject;
   removeProject: (id: string) => void;
 }
 
@@ -27,6 +32,7 @@ const ProjectContext = createContext<ProjectContextValue>({
   project: DEFAULT_PROJECTS[0],
   setActiveId: () => {},
   addProject: () => DEFAULT_PROJECTS[0],
+  trackFilm: () => DEFAULT_PROJECTS[0],
   removeProject: () => {},
 });
 
@@ -38,11 +44,17 @@ export function useProject(): ProjectContextValue {
 function loadProjects(): TrackedProject[] {
   try {
     const saved = JSON.parse(window.localStorage.getItem(PROJECTS_KEY) || '[]');
-    if (Array.isArray(saved)) {
+    if (Array.isArray(saved) && saved.length > 0) {
       const valid = saved.filter(
         (p: any) => p && typeof p.id === 'string' && typeof p.title === 'string' && Array.isArray(p.keywords) && p.keywords.length > 0
       );
-      if (valid.length > 0) return valid;
+      // Merge defaults if missing
+      const ids = new Set(valid.map((p: any) => p.id));
+      const combined = [...valid];
+      for (const def of DEFAULT_PROJECTS) {
+        if (!ids.has(def.id)) combined.push(def);
+      }
+      return combined;
     }
   } catch {
     /* fall through to defaults */
@@ -96,8 +108,26 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     return created;
   };
 
+  const trackFilm = (film: { id: string; title: string; subtitle?: string; keywords: string[] }): TrackedProject => {
+    const existing = projects.find((p) => p.id === film.id || p.title.toLowerCase() === film.title.toLowerCase());
+    if (existing) {
+      setActiveId(existing.id);
+      return existing;
+    }
+    const cleanTitle = film.title.trim().slice(0, 50);
+    const newProject: TrackedProject = {
+      id: film.id,
+      title: cleanTitle,
+      subtitle: film.subtitle || 'Indian Theatrical Release (30-Day Radar)',
+      keywords: film.keywords && film.keywords.length > 0 ? film.keywords : [cleanTitle.toLowerCase()],
+    };
+    setProjects((prev) => [newProject, ...prev]);
+    setActiveId(newProject.id);
+    return newProject;
+  };
+
   return (
-    <ProjectContext.Provider value={{ projects, project, setActiveId, addProject, removeProject }}>
+    <ProjectContext.Provider value={{ projects, project, setActiveId, addProject, trackFilm, removeProject }}>
       {children}
     </ProjectContext.Provider>
   );

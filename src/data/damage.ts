@@ -347,6 +347,229 @@ export const films: FilmDamage[] = [
       note: 'Direct screen competition in Hindi multiplexes; genre overlap is low, audience overlap is high.',
     },
   },
+  {
+    id: 'war2',
+    title: 'WAR 2',
+    language: 'Hindi + Telugu / Tamil dubs',
+    genre: 'Spy Action Thriller',
+    releaseDate: '14 Aug 2026',
+    budget: '₹320 Cr',
+    status: 'Pre-release · Advance bookings opening',
+    modelled: true,
+    score: 48,
+    observed: [
+      { metric: 'Advance Bookings', delta: '↑ 34% velocity in Mumbai/Delhi' },
+      { metric: 'Telugu Screen Parity', delta: '⚠ Friction with local single-screens' },
+      { metric: 'Runtime Rumors', delta: '↓ Speculative 3h 18m narrative circulating' },
+    ],
+    inferred: [{ metric: 'Regional dual-star tension', delta: 'Fan clubs clashing over screen time distribution' }],
+    inference: 'Tremendous baseline interest, but cross-market screen disputes in AP/Telangana threaten opening day single-screen penetration.',
+    confidence: 84,
+    markets: [
+      { region: 'Mumbai', language: 'Hindi', health: 88, revenue: '₹65 Cr', occupancy: 78, shows: 850, velocity: '+28%', sentiment: 24, trend: 'up' },
+      { region: 'Delhi NCR', language: 'Hindi', health: 84, revenue: '₹54 Cr', occupancy: 72, shows: 720, velocity: '+22%', sentiment: 18, trend: 'up' },
+      { region: 'AP / Telangana', language: 'Telugu', health: 51, revenue: '₹58 Cr', occupancy: 62, shows: 890, velocity: '-8%', sentiment: -12, trend: 'down' },
+      { region: 'Karnataka', language: 'Kannada/Hindi', health: 76, revenue: '₹28 Cr', occupancy: 68, shows: 410, velocity: '+14%', sentiment: 12, trend: 'up' },
+      { region: 'Overseas', language: 'Multi', health: 82, revenue: '$14.5M', occupancy: 74, shows: 620, velocity: '+19%', sentiment: 16, trend: 'up' },
+    ],
+    revenue: {
+      expected: '₹750 Cr',
+      projected: '₹680 Cr',
+      atRisk: '₹34 Cr',
+      atRiskCr: 34,
+      producer: '₹140 Cr',
+      distributor: '₹110 Cr',
+      exhibitor: '₹70 Cr',
+      gross: '₹120 Cr (Adv est)',
+      net: '₹98 Cr',
+      share: '₹55 Cr',
+      atp: '₹285',
+      footfalls: '2.1 Cr est.',
+      occupancy: '72% forecast',
+    },
+    footfall: {
+      revenue: '↑ surging',
+      footfalls: '↑ strong',
+      atp: '↑ premium',
+      verdict: 'Heavy initial demand; monitor South single-screen conversion before Day 1.',
+      warning: false,
+    },
+    crises: [
+      {
+        id: 'war2-screen-parity',
+        filmId: 'war2',
+        severity: 'HIGH',
+        problem: 'Exhibitor screen dispute over Telugu version 2D vs IMAX sharing with regional releases.',
+        markets: [
+          { name: 'Hyderabad', level: 'amber' },
+          { name: 'Vijayawada', level: 'red' },
+          { name: 'Vizag', level: 'amber' },
+        ],
+        revenueAtRisk: '₹18.5 Cr',
+        trend: '+14% friction',
+        action: 'Direct distributor summit with regional multiplex chains; guarantee 6-show minimums.',
+      },
+    ],
+    actions: [
+      { id: 'war-a1', title: 'Lock South distributor revenue parity agreement', why: 'Eliminates boycott threats from local exhibitor associations.', impact: 'Unlocks 320 single screens in AP/TG.', urgency: 'NOW', confidence: 88 },
+      { id: 'war-a2', title: 'Clarify official censor runtime (2h 46m)', why: 'Dispel fatigue narrative claiming film is over 3 hours.', impact: 'Prevents family audience hesitation.', urgency: 'THIS WEEK', confidence: 91 },
+    ],
+    timeline: [
+      { label: 'Teaser drop', detail: '145M cross-platform views in 24h.', state: 'done' },
+      { label: 'Advance bookings launch', detail: 'Record breaking early velocity in North metros.', state: 'active' },
+      { label: 'Exhibitor parity lock', detail: 'Resolving South territory screen allocations.', state: 'active' },
+      { label: 'Premiere day — Aug 14', detail: 'Simultaneous 5-language global rollout.', state: 'upcoming' },
+    ],
+    competition: {
+      films: [
+        { name: 'WAR 2', velocity: '+28%' },
+        { name: 'Regional Tentpole', velocity: '+12%' },
+      ],
+      note: 'Clear solo window in Hindi belt; battleground is South multiplex show counts.',
+    },
+  },
+  {
+    id: 'pushpa2',
+    title: 'PUSHPA 2: The Rule',
+    language: 'Telugu + Hindi + South Dubs',
+    genre: 'Mass Action Drama',
+    releaseDate: '06 Dec 2026',
+    budget: '₹400 Cr',
+    status: 'Theatrical Campaign · High-stakes Security',
+    modelled: true,
+    score: 62,
+    observed: [
+      { metric: 'Piracy Alerts', delta: '⚠ 14 unauthorized Telegram channel leaks detected' },
+      { metric: 'Mass Belt Occupancy', delta: '↑ 89% advance sold-out in AP/TG & North mass circuits' },
+      { metric: 'Boycott Hashtag Swarm', delta: '↓ 38,000 synthetic bot posts flagged' },
+    ],
+    inferred: [{ metric: 'Coordinated smear campaign', delta: 'Bot clusters targeting lead actor in Central circuits' }],
+    inference: 'Massive theatrical momentum, but aggressive piracy attempts and coordinated review-bombing require active automated interdiction.',
+    confidence: 89,
+    markets: [
+      { region: 'AP / Telangana', language: 'Telugu', health: 86, revenue: '₹140 Cr', occupancy: 91, shows: 1450, velocity: '+42%', sentiment: 38, trend: 'up' },
+      { region: 'Hindi Belt', language: 'Hindi', health: 82, revenue: '₹115 Cr', occupancy: 84, shows: 1300, velocity: '+36%', sentiment: 29, trend: 'up' },
+      { region: 'Karnataka', language: 'Kannada/Telugu', health: 74, revenue: '₹45 Cr', occupancy: 76, shows: 520, velocity: '+18%', sentiment: 21, trend: 'up' },
+      { region: 'Tamil Nadu', language: 'Tamil', health: 68, revenue: '₹34 Cr', occupancy: 69, shows: 480, velocity: '+11%', sentiment: 14, trend: 'flat' },
+      { region: 'Overseas', language: 'Multi', health: 84, revenue: '$18.2M', occupancy: 82, shows: 780, velocity: '+31%', sentiment: 28, trend: 'up' },
+    ],
+    revenue: {
+      expected: '₹1,050 Cr',
+      projected: '₹940 Cr',
+      atRisk: '₹58 Cr',
+      atRiskCr: 58,
+      producer: '₹190 Cr',
+      distributor: '₹155 Cr',
+      exhibitor: '₹95 Cr',
+      gross: '₹450 Cr (Opening Weekend est)',
+      net: '₹375 Cr',
+      share: '₹210 Cr',
+      atp: '₹265',
+      footfalls: '3.4 Cr est.',
+      occupancy: '82% avg',
+    },
+    footfall: {
+      revenue: '↑ record-breaking',
+      footfalls: '↑ capacity',
+      atp: '↑ premium',
+      verdict: 'Peak theatrical phenomenon; key threat is pre-interval piracy leaking on social platforms.',
+      warning: true,
+    },
+    crises: [
+      {
+        id: 'pushpa2-piracy-climax',
+        filmId: 'pushpa2',
+        severity: 'CRITICAL',
+        problem: 'Climax battle video clip leaked on Telegram & X from overseas preview show.',
+        markets: [
+          { name: 'Hyderabad', level: 'red' },
+          { name: 'Bangalore', level: 'amber' },
+          { name: 'Mumbai', level: 'amber' },
+        ],
+        revenueAtRisk: '₹28 Cr',
+        trend: '+45% viral velocity',
+        action: 'Deploy automated DMCA takedown bot network; issue exhibitor watermark forensic audit.',
+      },
+    ],
+    actions: [
+      { id: 'p2-a1', title: 'Issue instant Telegram & Meta DMCA injunction', why: 'Prevents clip from migrating to mainstream algorithmic feeds.', impact: 'Preserves estimated ₹14 Cr opening weekend gross.', urgency: 'NOW', confidence: 93 },
+      { id: 'p2-a2', title: 'Release official high-res promotional stills', why: 'Starves unauthorized grainy leaks of organic search impressions.', impact: 'Suppresses pirate search trends by 65%.', urgency: 'NOW', confidence: 85 },
+    ],
+    timeline: [
+      { label: 'Trailer milestone', detail: '200M views across 6 languages.', state: 'done' },
+      { label: 'Early overseas premiere', detail: 'Climax clip leak detected and contained.', state: 'active' },
+      { label: 'Day-1 global release', detail: '8,500 screens worldwide.', state: 'upcoming' },
+    ],
+    competition: {
+      films: [
+        { name: 'PUSHPA 2: The Rule', velocity: '+42%' },
+        { name: 'Hollywood Tentpole', velocity: '-15%' },
+      ],
+      note: 'Dominating 85%+ screen share across national multiplex chains.',
+    },
+  },
+  {
+    id: 'kantara',
+    title: 'KANTARA: Chapter 1',
+    language: 'Kannada + Pan-India 6 dubs',
+    genre: 'Mythological Action Folklore',
+    releaseDate: '02 Oct 2026',
+    budget: '₹160 Cr',
+    status: 'Post-production · Teaser Campaign',
+    modelled: true,
+    score: 26,
+    observed: [
+      { metric: 'Organic Reception', delta: '↑ 94% positive sentiment across India' },
+      { metric: 'Cultural Sentiment', delta: '✓ Ritual authenticity praised by coastal communities' },
+      { metric: 'Booking Velocity', delta: '↑ +38% watch-list adds' },
+    ],
+    inferred: [{ metric: 'Word-of-mouth momentum', delta: 'Exceptional anticipation in Hindi, Telugu, and Kannada belts' }],
+    inference: 'Rare universal cultural alignment; minimal active controversy. Focus on preserving folklore authenticity and distributor screen locking.',
+    confidence: 91,
+    markets: [
+      { region: 'Karnataka', language: 'Kannada', health: 96, revenue: '₹92 Cr', occupancy: 88, shows: 740, velocity: '+34%', sentiment: 54, trend: 'up' },
+      { region: 'Hindi Belt', language: 'Hindi', health: 89, revenue: '₹84 Cr', occupancy: 79, shows: 980, velocity: '+29%', sentiment: 48, trend: 'up' },
+      { region: 'AP / Telangana', language: 'Telugu', health: 87, revenue: '₹55 Cr', occupancy: 81, shows: 620, velocity: '+24%', sentiment: 42, trend: 'up' },
+      { region: 'Kerala', language: 'Malayalam', health: 91, revenue: '₹32 Cr', occupancy: 85, shows: 380, velocity: '+31%', sentiment: 50, trend: 'up' },
+    ],
+    revenue: {
+      expected: '₹520 Cr',
+      projected: '₹510 Cr',
+      atRisk: '₹8 Cr',
+      atRiskCr: 8,
+      producer: '₹85 Cr',
+      distributor: '₹68 Cr',
+      exhibitor: '₹42 Cr',
+      gross: '₹140 Cr (Pre-booking est)',
+      net: '₹115 Cr',
+      share: '₹62 Cr',
+      atp: '₹210',
+      footfalls: '2.5 Cr est.',
+      occupancy: '81% avg',
+    },
+    footfall: {
+      revenue: '↑ exceptional',
+      footfalls: '↑ expanding',
+      atp: '→ accessible',
+      verdict: 'Healthy organic volume demand with zero synthetic inflation. Maintain authentic PR tone.',
+      warning: false,
+    },
+    crises: [],
+    actions: [
+      { id: 'kan-a1', title: 'Lock premium IMAX screens early', why: 'Visual folklore format converts exceptionally on massive screens.', impact: '+₹6 Cr premium format ATP lift.', urgency: 'THIS WEEK', confidence: 89 },
+    ],
+    timeline: [
+      { label: 'First look teaser', detail: 'National acclaim; organic trending.', state: 'done' },
+      { label: 'Audio launch campaign', detail: 'Tribal score release planned.', state: 'active' },
+      { label: 'Gandhi Jayanti release', detail: 'Solo festive corridor.', state: 'upcoming' },
+    ],
+    competition: {
+      films: [
+        { name: 'KANTARA: Chapter 1', velocity: '+34%' },
+      ],
+      note: 'Solo release window on Gandhi Jayanti; no direct competition.',
+    },
+  },
 ];
 
 export const activeCrises: (Crisis & { filmTitle: string })[] = films.flatMap((f) =>
@@ -370,3 +593,110 @@ export function liveScoreOf(film: FilmDamage, liveNegPct?: number): number {
   if (!film.modelled && typeof liveNegPct === 'number') return Math.max(0, Math.min(100, Math.round(liveNegPct)));
   return film.score;
 }
+
+import type { LatestFilmItem } from './apiService';
+
+/** Generates a complete FilmDamage profile from a dynamic 30-day latest Indian film */
+export function createFilmDamageFromLatest(item: LatestFilmItem): FilmDamage {
+  const isReleased = item.telemetry30d.isReleased;
+  const daysDiff = Math.abs(item.telemetry30d.diffDays);
+  const statusStr = isReleased ? `In Theatres (Day ${daysDiff})` : `Releasing in ${daysDiff} Days`;
+
+  return {
+    id: item.id,
+    title: item.title,
+    language: item.language,
+    genre: item.genre,
+    releaseDate: item.releaseDateFormatted || item.releaseDate,
+    budget: item.budget,
+    status: `${statusStr} · ${item.bookingStatus}`,
+    modelled: false,
+    score: item.threatScore,
+    observed: [
+      { metric: 'BookMyShow Signal', delta: item.bookingStatus },
+      { metric: '30-Day Search Curiosity', delta: `${(item.telemetry30d.total30dViews / 1000).toFixed(1)}k queries` },
+      { metric: 'Theatrical Window Status', delta: item.telemetry30d.daysSinceReleaseText },
+      { metric: 'Box Office Pace', delta: item.boxOffice },
+    ],
+    inferred: [
+      { metric: 'Multiplex Word of Mouth', delta: item.threatScore > 50 ? 'Volatile' : 'Positive retention' },
+      { metric: 'Regional Threat Velocity', delta: item.threatScore > 65 ? '+18% / 12h' : '+4% / 24h' },
+    ],
+    inference: `${item.title} is actively tracked within the 30-day Indian theatrical release window. Current BookMyShow activity indicates ${item.bookingStatus}. Threat index stands at ${item.threatScore}/100.`,
+    confidence: 88,
+    markets: [
+      { region: 'North India (Delhi/UP/Punjab)', language: 'Hindi', health: Math.max(20, 100 - item.threatScore), revenue: '₹34 Cr', occupancy: 68, shows: 4200, velocity: '+12%', sentiment: 74, trend: 'up' },
+      { region: 'West (Mumbai/Gujarat/Pune)', language: 'Hindi', health: Math.max(25, 95 - item.threatScore), revenue: '₹28 Cr', occupancy: 72, shows: 3800, velocity: '+16%', sentiment: 78, trend: 'up' },
+      { region: 'South (Bengaluru/Hyderabad/Chennai)', language: 'Multi', health: Math.max(15, 85 - item.threatScore), revenue: '₹18 Cr', occupancy: 61, shows: 2100, velocity: '+8%', sentiment: 70, trend: 'flat' },
+      { region: 'East (Bengal/Bihar/Assam)', language: 'Hindi', health: Math.max(20, 80 - item.threatScore), revenue: '₹9 Cr', occupancy: 54, shows: 1400, velocity: '+4%', sentiment: 66, trend: 'flat' },
+    ],
+    revenue: {
+      expected: '₹120 Cr',
+      projected: item.boxOffice || '₹95 Cr',
+      atRisk: `₹${((item.threatScore / 100) * 45).toFixed(1)} Cr`,
+      atRiskCr: Number(((item.threatScore / 100) * 45).toFixed(1)),
+      producer: '₹48 Cr',
+      distributor: '₹32 Cr',
+      exhibitor: '₹15 Cr',
+      gross: item.boxOffice || '₹85 Cr',
+      net: '₹71 Cr',
+      share: '₹35.5 Cr',
+      atp: '₹285',
+      footfalls: '2.8M',
+      occupancy: '64%',
+    },
+    footfall: {
+      revenue: item.boxOffice || '₹85 Cr',
+      footfalls: '2.8M',
+      atp: '₹285',
+      verdict: item.threatScore > 60 ? 'Vulnerable to weekday drop' : 'Healthy weekend-to-weekday retention',
+      warning: item.threatScore > 60,
+    },
+    crises: [
+      {
+        id: `${item.id}-c1`,
+        filmId: item.id,
+        severity: item.threatScore > 70 ? 'CRITICAL' : item.threatScore > 45 ? 'HIGH' : 'MEDIUM',
+        problem: `${item.title}: Active theatrical release tracking & social narrative monitoring in the 30-day window.`,
+        markets: [
+          { name: 'North India', level: item.threatScore > 60 ? 'red' : 'amber' },
+          { name: 'West & Mumbai', level: item.threatScore > 50 ? 'amber' : 'green' },
+        ],
+        revenueAtRisk: `₹${((item.threatScore / 100) * 30).toFixed(1)} Cr`,
+        trend: item.threatScore > 50 ? '+14% / 24h' : 'Stable',
+        action: 'Deploy positive talent testimonials & monitor BookMyShow fast-filling indicators.',
+      },
+    ],
+    actions: [
+      {
+        id: `${item.id}-a1`,
+        title: 'Calibrate Theatrical Show Allocations with Exhibitors',
+        why: 'Counteract weekend churn and lock prime evening slots on BookMyShow and PVR Inox chains.',
+        impact: 'Protects up to ₹8.5 Cr in second-weekend collections.',
+        urgency: 'NOW',
+        confidence: 91,
+      },
+      {
+        id: `${item.id}-a2`,
+        title: 'Amplify Verified Audience Reactions on YouTube & Instagram',
+        why: 'Neutralize aggressive review-bombing and paid negative campaigns from competitor fandoms.',
+        impact: 'Stabilizes audience sentiment above 72% positive.',
+        urgency: 'THIS WEEK',
+        confidence: 86,
+      },
+    ],
+    timeline: [
+      { label: 'Advance Booking Open', detail: `${item.bookingStatus} across national multiplexes.`, state: isReleased ? 'done' : 'active' },
+      { label: 'Release Day Theatrical Reception', detail: 'Critical morning show audience sentiment tracking.', state: isReleased ? 'done' : 'upcoming' },
+      { label: '30-Day Box Office Consolidation', detail: 'Sustain weekday holdover and optimize regional screen distribution.', state: 'upcoming' },
+    ],
+    competition: {
+      films: [
+        { name: 'Mirzapur: The Movie', velocity: '+28%' },
+        { name: 'Haiwaan', velocity: '+22%' },
+      ],
+      note: 'High density theatrical window with multiple Pan-India tentpoles competing for multiplex prime hours.',
+    },
+  };
+}
+

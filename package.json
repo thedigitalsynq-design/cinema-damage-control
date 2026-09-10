@@ -16,6 +16,7 @@
     "clsx": "^2.1.1",
     "concurrently": "^10.0.5",
     "cors": "^2.8.6",
+    "d3": "^7.9.0",
     "express": "^5.2.1",
     "framer-motion": "^13.2.0",
     "liquid-gooey": "^0.2.1",
@@ -27,6 +28,7 @@
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
+    "@types/d3": "^7.4.3",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",

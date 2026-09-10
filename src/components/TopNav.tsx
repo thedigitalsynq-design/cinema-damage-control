@@ -7,6 +7,8 @@ import { alerts } from '../data/mockData';
 import { PHASES, usePhase } from './PhaseContext';
 import { useProject } from './ProjectContext';
 import { useToast } from './Toaster';
+import { ExecutiveDossierModal } from './ExecutiveDossierModal';
+import { CountermeasureModal } from './CountermeasureModal';
 
 function PhaseSwitcher() {
   const { phase, setPhase } = usePhase();
@@ -140,6 +142,8 @@ function ProjectSwitcher() {
 export function TopNav({ onOpenCommandPalette }: { onOpenCommandPalette: () => void }) {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showDossier, setShowDossier] = useState(false);
+  const [showCountermeasure, setShowCountermeasure] = useState(false);
   const unreadAlerts = alerts.filter((a) => !a.read).length;
 
   useEffect(() => {
@@ -156,31 +160,51 @@ export function TopNav({ onOpenCommandPalette }: { onOpenCommandPalette: () => v
   });
 
   return (
-    <header className="flex h-[52px] items-center justify-between border-b border-white/[0.08] bg-black/60 px-5 backdrop-blur-2xl backdrop-saturate-150">
-      <div className="flex items-center gap-3">
-        <div className="flex items-baseline gap-2">
-          <span className="text-[15px] font-semibold tracking-tight text-white">Cinema Damage Control</span>
-          <ProjectSwitcher />
+    <>
+      <header className="flex h-[52px] items-center justify-between border-b border-white/[0.08] bg-black/75 px-5 backdrop-blur-2xl backdrop-saturate-150">
+        <div className="flex items-center gap-3">
+          <div className="flex items-baseline gap-2">
+            <span className="text-[14.5px] font-bold tracking-tight text-white flex items-center gap-1.5">
+              <span className="flex h-5 w-5 items-center justify-center rounded-md bg-red-600/90 text-[11px] font-black text-white">C</span>
+              Cinema Damage Control
+            </span>
+            <ProjectSwitcher />
+          </div>
+          <div className="h-4 w-px bg-white/10" />
+          <LiveIndicator critical />
+          <div className="h-4 w-px bg-white/10" />
+          <div className="flex items-center gap-1.5">
+            <span className="text-[12px] font-normal tabular-nums text-war-text-secondary">05 Sep 2026 · {timeStr} IST</span>
+          </div>
         </div>
-        <div className="h-4 w-px bg-white/10" />
-        <LiveIndicator critical />
-        <div className="h-4 w-px bg-white/10" />
-        <div className="flex items-center gap-1.5">
-          <span className="text-[12px] font-normal tabular-nums text-war-text-secondary">05 Sep 2026 · {timeStr} IST</span>
-        </div>
-      </div>
 
-      <div className="flex items-center gap-2.5">
-        <PhaseSwitcher />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowDossier(true)}
+            className="hidden items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-[12px] font-medium text-zinc-200 transition hover:bg-white/12 hover:text-white sm:flex active:scale-95"
+          >
+            <GIcon name="description" size={13} className="text-amber-400" />
+            Executive Dossier
+          </button>
 
-        <button
-          onClick={onOpenCommandPalette}
-          className="flex h-8 w-64 items-center gap-2 rounded-full bg-white/[0.08] px-3.5 text-war-text-muted transition hover:bg-white/[0.12] hover:text-white active:scale-[0.98]"
-        >
-          <GIcon name="search" size={14} />
-          <span className="text-[13px] font-normal">Search</span>
-          <kbd className="ml-auto rounded-md bg-white/10 px-1.5 py-0.5 text-[11px] font-medium text-war-text-secondary">⌘K</kbd>
-        </button>
+          <button
+            onClick={() => setShowCountermeasure(true)}
+            className="hidden items-center gap-1.5 rounded-full bg-blue-600 px-3 py-1 text-[12px] font-medium text-white shadow-sm transition hover:bg-blue-500 sm:flex active:scale-95"
+          >
+            <GIcon name="bolt" size={13} />
+            Quick Dispatch
+          </button>
+
+          <PhaseSwitcher />
+
+          <button
+            onClick={onOpenCommandPalette}
+            className="flex h-8 w-48 xl:w-60 items-center gap-2 rounded-full bg-white/[0.08] px-3.5 text-war-text-muted transition hover:bg-white/[0.12] hover:text-white active:scale-[0.98]"
+          >
+            <GIcon name="search" size={14} />
+            <span className="text-[13px] font-normal">Search</span>
+            <kbd className="ml-auto rounded-md bg-white/10 px-1.5 py-0.5 text-[11px] font-medium text-war-text-secondary">⌘K</kbd>
+          </button>
 
         <div className="relative">
           <button
@@ -253,5 +277,9 @@ export function TopNav({ onOpenCommandPalette }: { onOpenCommandPalette: () => v
         </div>
       </div>
     </header>
+
+    <ExecutiveDossierModal isOpen={showDossier} onClose={() => setShowDossier(false)} />
+    <CountermeasureModal isOpen={showCountermeasure} onClose={() => setShowCountermeasure(false)} />
+  </>
   );
 }

@@ -36,6 +36,11 @@ import { computeDamage, escalationFor, smoothScore } from '../data/algorithm';
 import { motion } from 'framer-motion';
 import { AnimatedNumber, RefreshFlash, Stagger, StaggerItem } from '../components/motion';
 import type { Incident } from '../data/types';
+import { CrisisSandbox, type ScenarioId } from '../components/CrisisSandbox';
+import { ExecutiveDossierModal } from '../components/ExecutiveDossierModal';
+import { CountermeasureModal, type CountermeasureType } from '../components/CountermeasureModal';
+import { LiveIntelStream } from '../components/LiveIntelStream';
+import { D3ThreatTelemetryChart } from '../components/D3ThreatTelemetryChart';
 
 function RiskGauge({ score, label }: { score: number; label: string }) {
   const radius = 52;
@@ -509,18 +514,28 @@ export function CommandCenter() {
   const pressureActive = Math.abs(pressure.risk) >= 0.5 || Math.abs(pressure.velocity) >= 0.5;
 
   // Damage algorithm: one explainable score from measurements + model + you.
-  const toxicMarkets = films.find((f) => f.id === 'toxic')?.markets || [];
+  const activeFilm = films.find((f) => f.id === projectId) || films[0];
+  const activeMarkets = activeFilm.markets || [];
+
+  const [activeScenario, setActiveScenario] = useState<ScenarioId>('baseline');
+  const [dossierOpen, setDossierOpen] = useState(false);
+  const [countermeasureOpen, setCountermeasureOpen] = useState(false);
+  const [countermeasureType, setCountermeasureType] = useState<CountermeasureType>('press_release');
+
+  const scenarioScoreOffset =
+    activeScenario === 'leak' ? 24 : activeScenario === 'boycott' ? 20 : activeScenario === 'embargo' ? 14 : 0;
+
   const damage = computeDamage({
     negativity: live ? live.negPct : -sim.sentiment,
     velocityPct: live ? live.velocityPct : sim.velocity,
     reachMillions: live ? live.totalReach / 1e6 : sim.reach,
-    weakMarkets: toxicMarkets.filter((m) => m.health < 50).length,
-    totalMarkets: toxicMarkets.length,
-    activeLeaks: leakLinks.filter((l) => l.status === 'ACTIVE').length,
+    weakMarkets: activeMarkets.filter((m) => m.health < 50).length,
+    totalMarkets: activeMarkets.length,
+    activeLeaks: leakLinks.filter((l) => l.status === 'ACTIVE').length + (activeScenario === 'leak' ? 3 : 0),
     pressureRisk: pressure.risk,
     sampleSize: live ? live.total : 0,
   });
-  const gaugeScore = damage.score;
+  const gaugeScore = Math.min(98, Math.max(12, damage.score + scenarioScoreOffset));
   const escalation = escalationFor(gaugeScore, live ? live.velocityPct : sim.velocity);
   const [showWhy, setShowWhy] = useState(false);
 
@@ -540,7 +555,7 @@ export function CommandCenter() {
       gaugeState.current = { id: projectId, value: next };
       setGaugeShown(next);
     }
-  });
+  }, [projectId, gaugeScore]);
 
   const toggleFlag = (id: string, title: string) => {
     setFlagged((prev) => {
@@ -597,18 +612,92 @@ export function CommandCenter() {
           </div>
         </div>
 
+        {/* Crisis Simulation Sandbox */}
+        <CrisisSandbox
+          activeScenario={activeScenario}
+          onSelectScenario={setActiveScenario}
+          onOpenCountermeasure={() => {
+            setCountermeasureType(
+              activeScenario === 'leak' ? 'piracy_dmca' : activeScenario === 'boycott' ? 'press_release' : 'exhibitor_memo'
+            );
+            setCountermeasureOpen(true);
+          }}
+        />
+
+        {/* Active Scenario Warning Strip */}
+        {activeScenario !== 'baseline' && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-4 shadow-xl ${
+              activeScenario === 'leak'
+                ? 'border-red-500/40 bg-red-500/10 text-red-200'
+                : activeScenario === 'boycott'
+                ? 'border-amber-500/40 bg-amber-500/10 text-amber-200'
+                : 'border-blue-500/40 bg-blue-500/10 text-blue-200'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-white">
+                <GIcon name={activeScenario === 'leak' ? 'videocam_off' : activeScenario === 'boycott' ? 'report' : 'storefront'} size={20} />
+              </div>
+              <div>
+                <div className="text-[11px] font-bold uppercase tracking-wider">
+                  {activeScenario === 'leak' ? 'CRITICAL LEAK INJECTION' : activeScenario === 'boycott' ? 'COORDINATED BOYCOTT DRILL' : 'EXHIBITOR RESISTANCE DRILL'}
+                </div>
+                <div className="text-[13px] font-medium text-white">
+                  {activeScenario === 'leak'
+                    ? '14 Telegram & X channels circulating 4K climax sequence. Threat score elevated +24.'
+                    : activeScenario === 'boycott'
+                    ? '38,000 synthetic bot accounts targeting lead cast and rating portals. Threat score +20.'
+                    : '320 South single-screens disputing revenue terms. Threat score +14.'}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setCountermeasureType(
+                    activeScenario === 'leak' ? 'piracy_dmca' : activeScenario === 'boycott' ? 'press_release' : 'exhibitor_memo'
+                  );
+                  setCountermeasureOpen(true);
+                }}
+                className="flex items-center gap-1.5 rounded-full bg-white px-4 py-1.5 text-[12px] font-semibold text-black shadow-md transition hover:bg-zinc-200 active:scale-95"
+              >
+                <GIcon name="bolt" size={14} />
+                Execute Response Protocol
+              </button>
+              <button
+                onClick={() => setActiveScenario('baseline')}
+                className="rounded-full bg-white/10 px-3 py-1.5 text-[12px] font-medium text-white transition hover:bg-white/20 active:scale-95"
+              >
+                Dismiss Drill
+              </button>
+            </div>
+          </motion.div>
+        )}
+
         <DamageCommand liveNegPct={live ? live.negPct : undefined} backendLive={isLive && !!stats} />
 
         <PhaseLead flaggedCount={flagged.size} />
 
-        {/* Overview — navy hero panel with light metric cards */}
+        {/* Overview — High-contrast dark studio intelligence panel */}
         <div className="relative mt-8">
-          <div aria-hidden className="absolute -top-3 left-8 right-8 h-10 rounded-t-[20px] bg-[#c7d2fe]/40" />
-          <div aria-hidden className="absolute -top-6 left-16 right-16 h-10 rounded-t-[20px] bg-[#bbf7d0]/30" />
-          <div className="relative rounded-[20px] border border-white/10 bg-gradient-to-b from-[#0b1c52] to-[#060f31] p-6 shadow-[0_24px_64px_rgba(2,8,40,0.55)] lg:p-7">
+          <div className="relative rounded-[22px] border border-white/10 bg-[#0e1017] p-6 shadow-[0_24px_64px_rgba(0,0,0,0.6)] lg:p-7">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-[26px] font-bold tracking-tight text-white">Reputation overview</h2>
+              <div>
+                <span className="text-[11px] font-bold tracking-[0.08em] text-blue-400 uppercase">Executive Intelligence</span>
+                <h2 className="text-[22px] font-bold tracking-tight text-white">Reputation & Audience Velocity</h2>
+              </div>
               <div className="relative z-30 flex items-center gap-2">
+                <button
+                  onClick={() => setDossierOpen(true)}
+                  className="flex h-9 items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-4 text-[13px] font-medium text-white transition hover:bg-white/15 active:scale-[0.98]"
+                >
+                  <GIcon name="description" size={14} className="text-amber-400" />
+                  Print Briefing
+                </button>
                 {(periodOpen || filterOpen) && (
                   <button
                     aria-label="Close menus"
@@ -708,46 +797,46 @@ export function CommandCenter() {
 
             <Stagger key={`cards-${period}`} className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {/* Sentiment */}
-              <StaggerItem index={0} className="rounded-2xl bg-gradient-to-br from-[#f4f6ff] to-[#dde4ff] p-4 text-[#0b1533] shadow-[0_10px_30px_rgba(2,8,40,0.35)] transition-[translate,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[0_18px_44px_rgba(2,8,40,0.5)]">
+              <StaggerItem index={0} className="rounded-2xl border border-white/8 bg-[#141620] p-4 text-white shadow-md transition-all duration-300 hover:-translate-y-1 hover:border-white/15 hover:shadow-xl">
                 <div className="flex items-center gap-2">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/85 shadow-sm">
-                    <GIcon name="trending_down" size={15} className="text-[#2f6bff]" />
+                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 shadow-sm text-red-400">
+                    <GIcon name="trending_down" size={16} />
                   </span>
-                  <span className="text-[12px] font-medium text-[#3c4a6b]">Negative share</span>
+                  <span className="text-[12px] font-medium text-zinc-400">Negative share</span>
                 </div>
                 {live ? (
-                  <AnimatedNumber value={-negShown} suffix="%" className="metric-value mt-1 block tabular-nums" />
+                  <AnimatedNumber value={-negShown} suffix="%" className="metric-value mt-1 block tabular-nums text-white" />
                 ) : (
-                  <AnimatedNumber value={sim.sentiment - pressure.sentiment} suffix="%" className="metric-value mt-1 block tabular-nums" />
+                  <AnimatedNumber value={sim.sentiment - pressure.sentiment} suffix="%" className="metric-value mt-1 block tabular-nums text-white" />
                 )}
                 <div className="mt-1 flex items-end justify-between gap-2">
                   <div>
                     {(() => {
                       const d = live ? deltaPts(live.sentimentBuckets) : deltaPts(sentimentTimelineData);
                       return (
-                        <div className={`text-[13px] font-bold tabular-nums ${d > 0 ? 'text-[#dc2626]' : d < 0 ? 'text-[#16a34a]' : 'text-[#6b7694]'}`}>
+                        <div className={`text-[13px] font-bold tabular-nums ${d > 0 ? 'text-[#ff6961]' : d < 0 ? 'text-[#30d158]' : 'text-zinc-400'}`}>
                           {d > 0 ? `−${d} pts` : d < 0 ? `+${-d} pts` : '0 pts'}
                         </div>
                       );
                     })()}
-                    <div className="text-[11px] text-[#6b7694]">vs. last period</div>
+                    <div className="text-[11px] text-zinc-500">vs. last period</div>
                   </div>
                   <Spark data={sentData} dataKey="negative" id="spark-sent" />
                 </div>
               </StaggerItem>
 
               {/* Velocity */}
-              <StaggerItem index={1} className="rounded-2xl bg-gradient-to-br from-[#f4f6ff] to-[#dde4ff] p-4 text-[#0b1533] shadow-[0_10px_30px_rgba(2,8,40,0.35)] transition-[translate,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[0_18px_44px_rgba(2,8,40,0.5)]">
+              <StaggerItem index={1} className="rounded-2xl border border-white/8 bg-[#141620] p-4 text-white shadow-md transition-all duration-300 hover:-translate-y-1 hover:border-white/15 hover:shadow-xl">
                 <div className="flex items-center gap-2">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/85 shadow-sm">
-                    <GIcon name="bolt" size={15} className="text-[#2f6bff]" />
+                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 shadow-sm text-blue-400">
+                    <GIcon name="bolt" size={16} />
                   </span>
-                  <span className="text-[12px] font-medium text-[#3c4a6b]">{live ? 'Stories / day' : 'Neg. velocity'}</span>
+                  <span className="text-[12px] font-medium text-zinc-400">{live ? 'Stories / day' : 'Neg. velocity'}</span>
                 </div>
                 {live ? (
-                  <AnimatedNumber value={live.lastCount} className="metric-value mt-1 block tabular-nums" />
+                  <AnimatedNumber value={live.lastCount} className="metric-value mt-1 block tabular-nums text-white" />
                 ) : (
-                  <AnimatedNumber value={Math.round(velShown)} prefix={velShown >= 0 ? '+' : ''} suffix="%" className="metric-value mt-1 block tabular-nums" />
+                  <AnimatedNumber value={Math.round(velShown)} prefix={velShown >= 0 ? '+' : ''} suffix="%" className="metric-value mt-1 block tabular-nums text-white" />
                 )}
                 <div className="mt-1 flex items-end justify-between gap-2">
                   <div>
@@ -755,10 +844,10 @@ export function CommandCenter() {
                       const v = live ? Math.round(velShown) : deltaPct(mentionVelocityData);
                       return (
                         <>
-                          <div className={`text-[13px] font-bold tabular-nums ${v > 0 ? 'text-[#dc2626]' : v < 0 ? 'text-[#16a34a]' : 'text-[#6b7694]'}`}>
+                          <div className={`text-[13px] font-bold tabular-nums ${v > 0 ? 'text-[#ff6961]' : v < 0 ? 'text-[#30d158]' : 'text-zinc-400'}`}>
                             {v > 0 ? `+${v} %` : v < 0 ? `${v} %` : '0 %'}
                           </div>
-                          <div className="text-[11px] text-[#6b7694]">vs. last period</div>
+                          <div className="text-[11px] text-zinc-500">vs. last period</div>
                         </>
                       );
                     })()}
@@ -768,31 +857,31 @@ export function CommandCenter() {
               </StaggerItem>
 
               {/* Mentions */}
-              <StaggerItem index={2} className="rounded-2xl bg-gradient-to-br from-[#f4f6ff] to-[#dde4ff] p-4 text-[#0b1533] shadow-[0_10px_30px_rgba(2,8,40,0.35)] transition-[translate,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[0_18px_44px_rgba(2,8,40,0.5)]">
+              <StaggerItem index={2} className="rounded-2xl border border-white/8 bg-[#141620] p-4 text-white shadow-md transition-all duration-300 hover:-translate-y-1 hover:border-white/15 hover:shadow-xl">
                 <div className="flex items-center gap-2">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/85 shadow-sm">
-                    <GIcon name="tag" size={15} className="text-[#2f6bff]" />
+                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 shadow-sm text-amber-400">
+                    <GIcon name="tag" size={16} />
                   </span>
-                  <span className="text-[12px] font-medium text-[#3c4a6b]">Stories tracked</span>
+                  <span className="text-[12px] font-medium text-zinc-400">Stories tracked</span>
                 </div>
                 {live ? (
-                  <AnimatedNumber value={live.total} className="metric-value mt-1 block tabular-nums" />
+                  <AnimatedNumber value={live.total} className="metric-value mt-1 block tabular-nums text-white" />
                 ) : (
-                  <AnimatedNumber value={sim.mentions} decimals={2} suffix="M" className="metric-value mt-1 block tabular-nums" />
+                  <AnimatedNumber value={sim.mentions} decimals={2} suffix="M" className="metric-value mt-1 block tabular-nums text-white" />
                 )}
                 <div className="mt-1 flex items-end justify-between gap-2">
                   <div>
                     {live ? (
                       <>
-                        <div className={`text-[13px] font-bold tabular-nums ${live.lastCount > 0 ? 'text-[#dc2626]' : 'text-[#6b7694]'}`}>
+                        <div className={`text-[13px] font-bold tabular-nums ${live.lastCount > 0 ? 'text-[#ff6961]' : 'text-zinc-400'}`}>
                           {live.lastCount > 0 ? `+${live.lastCount}` : '0'}
                         </div>
-                        <div className="text-[11px] text-[#6b7694]">stories today</div>
+                        <div className="text-[11px] text-zinc-500">stories today</div>
                       </>
                     ) : (
                       <>
-                        <div className="text-[13px] font-bold tabular-nums text-[#dc2626]">+62 %</div>
-                        <div className="text-[11px] text-[#6b7694]">vs. last period</div>
+                        <div className="text-[13px] font-bold tabular-nums text-[#ff6961]">+62 %</div>
+                        <div className="text-[11px] text-zinc-500">vs. last period</div>
                       </>
                     )}
                   </div>
@@ -801,31 +890,31 @@ export function CommandCenter() {
               </StaggerItem>
 
               {/* Reach */}
-              <StaggerItem index={3} className="rounded-2xl bg-gradient-to-br from-[#f4f6ff] to-[#dde4ff] p-4 text-[#0b1533] shadow-[0_10px_30px_rgba(2,8,40,0.35)] transition-[translate,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[0_18px_44px_rgba(2,8,40,0.5)]">
+              <StaggerItem index={3} className="rounded-2xl border border-white/8 bg-[#141620] p-4 text-white shadow-md transition-all duration-300 hover:-translate-y-1 hover:border-white/15 hover:shadow-xl">
                 <div className="flex items-center gap-2">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/85 shadow-sm">
-                    <GIcon name="visibility" size={15} className="text-[#2f6bff]" />
+                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 shadow-sm text-emerald-400">
+                    <GIcon name="visibility" size={16} />
                   </span>
-                  <span className="text-[12px] font-medium text-[#3c4a6b]">Est. reach</span>
+                  <span className="text-[12px] font-medium text-zinc-400">Est. reach</span>
                 </div>
                 {live ? (
-                  <AnimatedNumber value={live.totalReach / 1e6} decimals={1} suffix="M" className="metric-value mt-1 block tabular-nums" />
+                  <AnimatedNumber value={live.totalReach / 1e6} decimals={1} suffix="M" className="metric-value mt-1 block tabular-nums text-white" />
                 ) : (
-                  <AnimatedNumber value={sim.reach} decimals={1} suffix="M" className="metric-value mt-1 block tabular-nums" />
+                  <AnimatedNumber value={sim.reach} decimals={1} suffix="M" className="metric-value mt-1 block tabular-nums text-white" />
                 )}
                 <div className="mt-1 flex items-end justify-between gap-2">
                   <div>
                     {live ? (
                       <>
-                        <div className="flex items-center gap-1.5 text-[13px] font-bold text-[#16a34a]">
-                          <span className="h-1.5 w-1.5 rounded-full bg-[#16a34a] status-pulse" /> live
+                        <div className="flex items-center gap-1.5 text-[13px] font-bold text-emerald-400">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 status-pulse" /> live
                         </div>
-                        <div className="text-[11px] text-[#6b7694]">counting now</div>
+                        <div className="text-[11px] text-zinc-500">counting now</div>
                       </>
                     ) : (
                       <>
-                        <div className="text-[13px] font-bold tabular-nums text-[#2f6bff]">Expanding</div>
-                        <div className="text-[11px] text-[#6b7694]">vs. last period</div>
+                        <div className="text-[13px] font-bold tabular-nums text-blue-400">Expanding</div>
+                        <div className="text-[11px] text-zinc-500">vs. last period</div>
                       </>
                     )}
                   </div>
@@ -834,6 +923,11 @@ export function CommandCenter() {
               </StaggerItem>
             </Stagger>
           </div>
+        </div>
+
+        {/* Real-time External Intel Radar (YouTube, Wikipedia Edit Guard, 30-Day Audience Curve) */}
+        <div className="mt-8">
+          <LiveIntelStream />
         </div>
 
         {/* Risk detail — gauge, trending, model */}
@@ -990,6 +1084,14 @@ export function CommandCenter() {
               <p className="apple-footnote mt-2">{live ? 'Top 3 measured live · bottom 3 modelled' : 'Simulation values'}</p>
             </div>
           </div>
+        </div>
+
+        {/* D3.js High-Fidelity Threat Telemetry Stream Chart */}
+        <div className="mt-8">
+          <D3ThreatTelemetryChart
+            currentRisk={Math.round(gaugeShown)}
+            liveStoryCount={live?.total ?? 42}
+          />
         </div>
 
         {/* Charts Row */}
@@ -1221,6 +1323,20 @@ export function CommandCenter() {
           <IncidentDrawer incident={selectedIncident} onClose={() => setSelectedIncident(null)} />
         )}
       </AnimatePresence>
+
+      {/* Executive Briefing Dossier */}
+      <ExecutiveDossierModal
+        isOpen={dossierOpen}
+        onClose={() => setDossierOpen(false)}
+        activeScenario={activeScenario}
+      />
+
+      {/* Actionable Countermeasure Dispatcher */}
+      <CountermeasureModal
+        isOpen={countermeasureOpen}
+        onClose={() => setCountermeasureOpen(false)}
+        initialType={countermeasureType}
+      />
     </div>
   );
 }

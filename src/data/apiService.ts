@@ -11,6 +11,76 @@ export interface NewsItem {
   category: string;
 }
 
+export interface VideoItem {
+  title: string;
+  link: string;
+  pubDate: string;
+  source: string;
+  description: string;
+  hasControversy: boolean;
+  isReview: boolean;
+}
+
+export interface WikiRevision {
+  user: string;
+  timestamp: string;
+  comment: string;
+  size: number;
+  delta: number;
+  isControversial: boolean;
+}
+
+export interface TrendItem {
+  title: string;
+  pubDate: string;
+  traffic: string;
+}
+
+export interface DailyTelemetryItem {
+  date: string;
+  dayOffset: number;
+  dayLabel: string;
+  views: number;
+  threat: number;
+  sentimentPos: number;
+  sentimentNeg: number;
+  sentimentNeu: number;
+}
+
+export interface Telemetry30d {
+  diffDays: number;
+  isReleased: boolean;
+  daysSinceReleaseText: string;
+  isIn30DayWindow: boolean;
+  dailyData: DailyTelemetryItem[];
+  total30dViews: number;
+  peakDemandDate: string;
+}
+
+export interface LatestFilmItem {
+  id: string;
+  title: string;
+  releaseDate: string;
+  releaseDateFormatted: string;
+  language: string;
+  genre: string;
+  director: string;
+  cast: string[];
+  studio: string;
+  budget: string;
+  boxOffice: string;
+  bookingStatus: string;
+  bookMyShowUrl: string;
+  threatScore: number;
+  riskBand: 'Critical' | 'At Risk' | 'Watch' | 'Stable';
+  keywords: string[];
+  synopsis: string;
+  telemetry30d: Telemetry30d;
+  liveNewsCount: number;
+  liveNews: NewsItem[];
+  source: string;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   count: number;
@@ -41,6 +111,42 @@ class ApiService {
   async getNews(topic?: string): Promise<ApiResponse<NewsItem[]> & { topic?: string }> {
     const qs = topic ? `?topic=${encodeURIComponent(topic)}` : '';
     return this.fetch<NewsItem[]>(`/api/news${qs}`);
+  }
+
+  async getVideos(topic?: string): Promise<ApiResponse<VideoItem[]> & { topic?: string }> {
+    const qs = topic ? `?topic=${encodeURIComponent(topic)}` : '';
+    return this.fetch<VideoItem[]>(`/api/videos${qs}`);
+  }
+
+  async getRevisions(title?: string): Promise<{
+    success: boolean;
+    article?: string;
+    pageId?: string;
+    revisions?: WikiRevision[];
+    hasRecentEditWar?: boolean;
+    lastUpdated?: string;
+    error?: string;
+  }> {
+    try {
+      const qs = title ? `?title=${encodeURIComponent(title)}` : '';
+      const res = await fetch(`${this.baseUrl}/api/revisions${qs}`, {
+        signal: AbortSignal.timeout(15000),
+      });
+      return await res.json();
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Revisions unavailable' };
+    }
+  }
+
+  async getTrends(): Promise<{ success: boolean; data: TrendItem[] }> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/trends`, {
+        signal: AbortSignal.timeout(10000),
+      });
+      return await res.json();
+    } catch {
+      return { success: false, data: [] };
+    }
   }
 
   async getTrending(): Promise<ApiResponse<NewsItem[]>> {
@@ -81,6 +187,41 @@ class ApiService {
       return await res.json();
     } catch (err: any) {
       return { success: false, error: err?.message || 'Summary unavailable' };
+    }
+  }
+
+  async getLatestFilms(options?: { refresh?: boolean; language?: string; window?: number }): Promise<{
+    success: boolean;
+    cached?: boolean;
+    count: number;
+    windowDays: number;
+    currentAnchorDate: string;
+    lastSynced: string;
+    data: LatestFilmItem[];
+    error?: string;
+  }> {
+    try {
+      const params = new URLSearchParams();
+      if (options?.refresh) params.set('refresh', 'true');
+      if (options?.language) params.set('language', options.language);
+      if (options?.window) params.set('window', String(options.window));
+      const qs = params.toString() ? `?${params.toString()}` : '';
+      const res = await fetch(`${this.baseUrl}/api/latest-films${qs}`, {
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch (err: any) {
+      console.warn('getLatestFilms failed:', err);
+      return {
+        success: false,
+        count: 0,
+        windowDays: 30,
+        currentAnchorDate: '2026-09-10',
+        lastSynced: new Date().toISOString(),
+        data: [],
+        error: err?.message || 'Latest films unavailable',
+      };
     }
   }
 
