@@ -3,22 +3,18 @@ import cors from 'cors';
 import { parseStringPromise } from 'xml2js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
+const portArgIndex = process.argv.indexOf('--port');
+const cliPort = portArgIndex !== -1 ? Number(process.argv[portArgIndex + 1]) : NaN;
+const PORT = !isNaN(cliPort) && cliPort > 0 ? cliPort : (process.env.PORT ? Number(process.env.PORT) : 3000);
 
 app.use(cors());
 app.use(express.json());
-
-// The production build lives under the same subpath as GitHub Pages
-app.get('/', (req, res) => res.redirect('/cinema-damage-control/'));
-
-// Serve static build files (subpath first so bundled asset URLs resolve)
-app.use('/cinema-damage-control', express.static(join(__dirname, 'dist')));
-app.use(express.static(join(__dirname, 'dist')));
 
 // --- Topic-driven RSS collection (Google News, no key required) ---
 // Default project is TOXIC; /api/news?topic= re-anchors every feed to any
@@ -372,16 +368,47 @@ app.get('/api/article', async (req, res) => {
   }
 });
 
-// SPA fallback
-app.get('/{*splat}', (req, res) => {
-  res.sendFile(join(__dirname, 'dist', 'index.html'));
+// Backward compatibility for GitHub Pages subpath
+app.get('/cinema-damage-control', (req, res) => res.redirect('/'));
+app.get('/cinema-damage-control/{*splat}', (req, res) => {
+  const target = req.url.replace(/^\/cinema-damage-control/, '') || '/';
+  res.redirect(target);
 });
 
+if (process.env.NODE_ENV !== 'production') {
+  const { createServer: createViteServer } = await import('vite');
+  const vite = await createViteServer({
+    server: { middlewareMode: true },
+    appType: 'spa',
+  });
+  app.use(vite.middlewares);
+
+  app.use(async (req, res, next) => {
+    if (req.method !== 'GET') return next();
+    if (req.path.startsWith('/api')) return next();
+    try {
+      const url = req.originalUrl;
+      let template = fs.readFileSync(join(__dirname, 'index.html'), 'utf-8');
+      template = await vite.transformIndexHtml(url, template);
+      res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
+    } catch (e) {
+      if (vite.ssrFixStacktrace) vite.ssrFixStacktrace(e);
+      next(e);
+    }
+  });
+} else {
+  const distPath = join(__dirname, 'dist');
+  app.use(express.static(distPath));
+  app.get('/{*splat}', (req, res) => {
+    res.sendFile(join(distPath, 'index.html'));
+  });
+}
+
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`\n  CINEMA DAMAGE CONTROL ROOM API Server`);
+  console.log(`\n  CINEMA DAMAGE CONTROL ROOM Server`);
   console.log(`  ─────────────────────────`);
   console.log(`  Local:   http://localhost:${PORT}`);
   console.log(`  Network: http://0.0.0.0:${PORT}`);
-  console.log(`  API:     http://localhost:${PORT}/api/news`);
+  console.log(`  API:     http://0.0.0.0:${PORT}/api/news`);
   console.log(`\n  Collecting project news via Google News RSS (5-min cadence)...\n`);
 });

@@ -1,0 +1,8 @@
+{
+  "name": "Cinema Damage Control Room",
+  "description": "Real-time reputation intelligence and cinema release damage control war room dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
