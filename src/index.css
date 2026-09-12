@@ -383,3 +383,10 @@ main > div {
   from { opacity: 0; transform: translateX(20px); }
   to { opacity: 1; transform: translateX(0); }
 }
+
+/* Zero italic policy across the entire platform */
+*,
+*::before,
+*::after {
+  font-style: normal !important;
+}

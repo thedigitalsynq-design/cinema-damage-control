@@ -346,7 +346,7 @@ export function FreePluginsModal({
                       </span>
                     </div>
                     <p className="mt-1 text-[12px] text-zinc-300 leading-snug">{plugin.description}</p>
-                    <p className="mt-1 text-[11px] text-zinc-500 italic">{plugin.details}</p>
+                    <p className="mt-1 text-[11px] text-zinc-500">{plugin.details}</p>
                   </div>
                 </div>
 

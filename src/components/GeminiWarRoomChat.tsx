@@ -328,7 +328,7 @@ export const GeminiWarRoomChat: React.FC<GeminiWarRoomChatProps> = ({ isOpen, on
                         <span>Google Search Grounding Sources:</span>
                       </div>
                       {msg.groundingMetadata.webSearchQueries && (
-                        <p className="text-[10px] italic text-slate-500">
+                        <p className="text-[10px] text-slate-500">
                           Queries: {msg.groundingMetadata.webSearchQueries.join(', ')}
                         </p>
                       )}

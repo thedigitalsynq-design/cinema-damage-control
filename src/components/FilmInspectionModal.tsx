@@ -81,7 +81,7 @@ export function FilmInspectionModal({
               <div className="flex items-baseline gap-2 flex-wrap">
                 <h2 className="text-[26px] font-extrabold tracking-tight text-white">{film.title}</h2>
                 {film.originalTitle && film.originalTitle !== film.title && (
-                  <span className="text-[15px] font-normal text-war-text-muted italic">({film.originalTitle})</span>
+                  <span className="text-[15px] font-normal text-war-text-muted">({film.originalTitle})</span>
                 )}
               </div>
               <p className="mt-1 text-[13px] text-war-text-secondary">
