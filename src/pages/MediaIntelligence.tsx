@@ -23,7 +23,7 @@ const narrativeFlow = [
 
 export function MediaIntelligence() {
   const { project } = useProject();
-  const { news, stats, isLive } = useLiveData(project.keywords.join(','));
+  const { news, stats, isLive, lastUpdated, refresh, isLoading, liveMedia } = useLiveData(project.keywords.join(','));
   const live = isLive && stats;
 
   const landscape = live
@@ -48,14 +48,51 @@ export function MediaIntelligence() {
       ]
     : mediaSentimentData;
 
+  const currentStories = (liveMedia?.mediaStories && liveMedia.mediaStories.length > 0) ? liveMedia.mediaStories : mediaStories;
+  const currentNarrativeFlow = (liveMedia?.narrativeFlow && liveMedia.narrativeFlow.length > 0) ? liveMedia.narrativeFlow : narrativeFlow;
+
   return (
     <div className="flex-1 overflow-y-auto px-6 py-6 lg:px-8">
       <div className="mx-auto max-w-[1400px] space-y-5">
-        <div className="pb-1">
-          <p className="text-[13px] font-medium text-war-text-muted">Cinema Damage Control Room</p>
-          <h1 className="apple-title mt-0.5">Media</h1>
-          <p className="apple-subhead mt-1">Coverage and narrative flow under tracking.</p>
+        <div className="flex flex-wrap items-end justify-between gap-3 pb-1">
+          <div>
+            <div className="flex items-center gap-2">
+              <p className="text-[13px] font-medium text-war-text-muted">Cinema Damage Control Room</p>
+              {isLive ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#30d158]/30 bg-[#30d158]/10 px-2 py-0.5 text-[11px] font-semibold text-[#30d158]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#30d158] animate-pulse" />
+                  LIVE MEDIA FEED
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] font-medium text-war-text-muted">
+                  SIMULATED
+                </span>
+              )}
+            </div>
+            <h1 className="apple-title mt-0.5">Media</h1>
+            <p className="apple-subhead mt-1">Real-time press coverage, syndication, and narrative spread for {project.title}.</p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => refresh()}
+              disabled={isLoading}
+              className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-war-text-secondary transition hover:bg-white/[0.08] hover:text-white disabled:opacity-50"
+            >
+              <GIcon name="refresh" size={13} className={isLoading ? 'animate-spin' : ''} />
+              <span>{isLoading ? 'Syncing...' : 'Sync'}</span>
+            </button>
+          </div>
         </div>
+
+        {lastUpdated && (
+          <div className="flex items-center justify-between text-[12px] text-war-text-muted px-1">
+            <span>Aggregating Google News, entertainment trade journals, and digital publishers</span>
+            <span className="tabular-nums">
+              Last synced: {new Date(lastUpdated).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          </div>
+        )}
 
         <LiveBanner />
 
@@ -111,7 +148,7 @@ export function MediaIntelligence() {
               <span className="rounded-full bg-white/[0.07] px-2 py-0.5 text-[10px] font-semibold tracking-wider text-war-text-muted">MODELLED FLOW</span>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
-              {narrativeFlow.map((stage, i) => (
+              {currentNarrativeFlow.map((stage, i) => (
                 <div key={stage.stage} className="flex flex-1 items-center gap-2">
                   <div className="flex-1 rounded-2xl border border-white/[0.08] bg-white/[0.04] p-3.5 text-center">
                     <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-war-text-secondary">{stage.stage}</div>
@@ -150,7 +187,7 @@ export function MediaIntelligence() {
                     <div className="mb-1 flex flex-wrap items-center gap-2">
                       <span className="text-[13px] font-semibold text-white">{item.source || 'News'}</span>
                       <span className="text-[12px] tabular-nums text-war-text-muted">
-                        · {item.pubDate ? new Date(item.pubDate).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' }) : 'recent'}
+                        · {item.pubDate && !isNaN(new Date(item.pubDate).getTime()) ? new Date(item.pubDate).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' }) : 'recent'}
                       </span>
                     </div>
                     <h3 className="mb-2 text-[14px] font-medium leading-snug text-white transition-colors group-hover:text-[#64a8ff]">{item.title}</h3>
@@ -164,7 +201,7 @@ export function MediaIntelligence() {
                   <GIcon name="open_in_new" size={15} className="mt-1 shrink-0 text-war-text-muted transition group-hover:text-white" />
                 </a>
               );
-            }) : mediaStories.map((story) => (
+            }) : currentStories.map((story) => (
               <div key={story.id} className="group flex items-start gap-4 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4 transition hover:border-white/[0.12] hover:bg-white/[0.05]">
                 <div className="flex-1">
                   <div className="mb-1 flex flex-wrap items-center gap-2">

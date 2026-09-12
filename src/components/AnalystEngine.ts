@@ -52,6 +52,32 @@ Allowed actions — goto:<path among /, /signals, /incidents, /leaks, /response,
 Only attach actions that directly serve the answer (max 2). Plain discussion needs none.`;
 
 async function askFreeAI(snapshot: string, history: ChatMessage[], question: string): Promise<string | null> {
+  // First try the internal Gemini backend route
+  try {
+    const geminiRes = await fetch('/api/gemini/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: question,
+        systemInstruction: `${SYSTEM_PROMPT}\n\nDATA:\n${snapshot}`,
+        history: history.slice(-6).map((m) => ({
+          role: m.role,
+          content: m.text,
+        })),
+      }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (geminiRes.ok) {
+      const data = await geminiRes.json();
+      if (data && data.success && typeof data.text === 'string' && data.text.trim()) {
+        return data.text.trim();
+      }
+    }
+  } catch {
+    // Fallthrough to external AI / local deterministic engine
+  }
+
+  // Second try: free provider
   try {
     const res = await fetch('https://text.pollinations.ai/openai', {
       method: 'POST',
@@ -64,7 +90,7 @@ async function askFreeAI(snapshot: string, history: ChatMessage[], question: str
           { role: 'user', content: question },
         ],
       }),
-      signal: AbortSignal.timeout(45000),
+      signal: AbortSignal.timeout(15000),
     });
     if (!res.ok) return null;
     const json = await res.json();

@@ -11,6 +11,7 @@ import { useToast } from '../components/Toaster';
 import { useProject } from '../components/ProjectContext';
 import { useLiveData } from '../hooks/useLiveData';
 import { api, estimateSentiment, estimateReach, parseReach } from '../data/apiService';
+import { SearchGroundingWidget } from '../components/SearchGroundingWidget';
 
 const typeLabels: Record<string, { color: string; bg: string; dot: string }> = {
   VIRAL_POST: { color: 'text-[#ff6961]', bg: 'bg-[#ff453a]/12', dot: 'bg-[#ff453a]' },
@@ -56,6 +57,7 @@ export function LiveSignals() {
   const { project } = useProject();
   const { news, isLive, isLoading, lastUpdated, refresh, liveSignals, stats } = useLiveData(project.keywords.join(','));
   const [tab, setTab] = useState<'signals' | 'articles' | 'analyse'>('signals');
+  const [platformFilter, setPlatformFilter] = useState<string>('ALL');
   const [expanded, setExpanded] = useState<string | null>(null);
   const [summaries, setSummaries] = useState<Record<string, { status: 'loading' | 'done' | 'error'; text: string; via: 'brief' | 'live' }>>({});
   const live = isLive && liveSignals.length > 0;
@@ -135,9 +137,15 @@ export function LiveSignals() {
           </div>
           <div className="flex items-center gap-2">
             {live ? (
-              <div className="flex items-center gap-1.5 rounded-full bg-[#30d158]/15 px-3 py-1.5">
-                <GIcon name="radio" size={12} className="text-[#30d158] status-pulse" />
-                <span className="text-[12px] font-semibold tabular-nums text-[#30d158]">{liveSignals.length} live</span>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 rounded-full bg-[#30d158]/15 px-3 py-1.5">
+                  <GIcon name="radio" size={12} className="text-[#30d158] status-pulse" />
+                  <span className="text-[12px] font-semibold tabular-nums text-[#30d158]">{liveSignals.length} live</span>
+                </div>
+                <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-[#0a84ff]/15 px-2.5 py-1 text-[11px] font-semibold text-[#0a84ff] border border-[#0a84ff]/30">
+                  <GIcon name="travel_explore" size={12} />
+                  <span>Agent Reach Scraper</span>
+                </span>
               </div>
             ) : (
               <div className="flex items-center gap-2 rounded-full bg-[#ff453a]/12 px-3 py-1.5">
@@ -164,6 +172,9 @@ export function LiveSignals() {
           </div>
         </div>
 
+        {/* Google Search Grounding Widget */}
+        <SearchGroundingWidget />
+
         {/* Tabs */}
         <div className="inline-flex max-w-full gap-1 overflow-x-auto rounded-full bg-white/[0.07] p-1">
           {(
@@ -186,73 +197,132 @@ export function LiveSignals() {
           ))}
         </div>
 
+        {/* Platform Sub-Filters when in Signals tab and live is active */}
         {tab === 'signals' && live && (
-          <Stagger key={lastUpdated} className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3" delay={0.05}>
-            {liveSignals.map((signal: any, i: number) => (
-              <StaggerItem key={signal.id} index={i} className="glass-panel apple-card-hover group flex flex-col p-5">
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#ff9f0a]/12 px-2.5 py-1 text-[12px] font-semibold text-[#ffb340]">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#ff9f0a]" />
-                    news alert
-                  </span>
-                  <span className="text-[12px] tabular-nums text-war-text-muted">{signal.time}</span>
-                </div>
-
-                <h3 className="mb-2 flex-1 text-[15px] font-semibold leading-snug tracking-[-0.01em] text-white">
-                  {signal.link ? (
-                    <a
-                      href={signal.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="Open the full article"
-                      className="transition-colors hover:text-[#64a8ff] hover:underline hover:decoration-[#64a8ff]/50 hover:underline-offset-4"
-                    >
-                      {signal.title}
-                    </a>
-                  ) : (
-                    signal.title
-                  )}
-                </h3>
-
-                <div className="mb-4 flex items-center gap-1.5">
-                  <span className="text-[12px] text-war-text-muted">Source</span>
-                  <span className="truncate text-[13px] font-medium text-war-text-secondary">{signal.source}</span>
-                </div>
-
-                <div className="flex items-center justify-between border-t border-white/[0.06] pt-3.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[12px] tabular-nums text-war-text-muted">{signal.reach} reach</span>
-                    <span
-                      className={clsx(
-                        'text-[12px] font-semibold capitalize',
-                        signal.sentiment === 'NEGATIVE' && 'text-[#ff6961]',
-                        signal.sentiment === 'POSITIVE' && 'text-[#30d158]',
-                        signal.sentiment === 'NEUTRAL' && 'text-war-text-secondary'
-                      )}
-                    >
-                      {String(signal.sentiment).toLowerCase()}
-                    </span>
-                  </div>
-                  {signal.link ? (
-                    <a
-                      href={signal.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="apple-button flex items-center gap-1 bg-[#0a84ff] px-3.5 py-1.5 text-[13px] text-white hover:bg-[#409cff]"
-                    >
-                      Read <GIcon name="open_in_new" size={12} />
-                    </a>
-                  ) : (
-                    <button
-                      onClick={investigate}
-                      className="apple-button flex items-center gap-1 bg-[#0a84ff] px-3.5 py-1.5 text-[13px] text-white hover:bg-[#409cff]"
-                    >
-                      Investigate <GIcon name="arrow_outward" size={13} />
-                    </button>
-                  )}
-                </div>
-              </StaggerItem>
+          <div className="flex flex-wrap items-center gap-2 pt-1 pb-1">
+            <span className="text-[12px] font-semibold text-zinc-400">Stream Filter:</span>
+            {[
+              { id: 'ALL', label: `All Streams (${liveSignals.length})` },
+              { id: 'NEWS', label: `Google News (${liveSignals.filter((s: any) => s.platform === 'NEWS').length})` },
+              { id: 'REDDIT', label: `Reddit Cinema (${liveSignals.filter((s: any) => s.platform === 'REDDIT').length})` },
+              { id: 'YOUTUBE', label: `YouTube Feeds (${liveSignals.filter((s: any) => s.platform === 'YOUTUBE').length})` },
+              { id: 'TRADE', label: `Trade Disclosures (${liveSignals.filter((s: any) => s.platform === 'TRADE').length})` },
+            ].map((pf) => (
+              <button
+                key={pf.id}
+                onClick={() => setPlatformFilter(pf.id)}
+                className={clsx(
+                  'rounded-lg px-3 py-1 text-[11px] font-semibold transition active:scale-95',
+                  platformFilter === pf.id
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'bg-white/[0.05] text-zinc-400 hover:bg-white/[0.10] hover:text-white'
+                )}
+              >
+                {pf.label}
+              </button>
             ))}
+          </div>
+        )}
+
+        {tab === 'signals' && live && (
+          <Stagger key={`${lastUpdated}-${platformFilter}`} className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3" delay={0.05}>
+            {liveSignals
+              .filter((s: any) => platformFilter === 'ALL' || s.platform === platformFilter)
+              .map((signal: any, i: number) => {
+                const isReddit = signal.platform === 'REDDIT';
+                const isYt = signal.platform === 'YOUTUBE';
+                const isTrade = signal.platform === 'TRADE';
+                const isWeather = signal.platform === 'WEATHER';
+
+                const badgeBg = isReddit
+                  ? 'bg-orange-500/15 text-orange-400 border border-orange-500/30'
+                  : isYt
+                  ? 'bg-red-500/15 text-red-400 border border-red-500/30'
+                  : isTrade
+                  ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                  : isWeather
+                  ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
+                  : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30';
+
+                const badgeLabel = isReddit
+                  ? 'Reddit Cinema Radar'
+                  : isYt
+                  ? 'YouTube Review Stream'
+                  : isTrade
+                  ? 'Trade Box Office'
+                  : isWeather
+                  ? 'Distribution Circuit'
+                  : 'Google News (India)';
+
+                return (
+                  <StaggerItem key={signal.id} index={i} className="glass-panel apple-card-hover group flex flex-col p-5">
+                    <div className="mb-3 flex items-center justify-between">
+                      <span className={clsx('inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider', badgeBg)}>
+                        <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                        {badgeLabel}
+                      </span>
+                      <span className="text-[11px] font-mono tabular-nums text-war-text-muted">{signal.time}</span>
+                    </div>
+
+                    <h3 className="mb-2 flex-1 text-[15px] font-semibold leading-snug tracking-[-0.01em] text-white">
+                      {signal.link ? (
+                        <a
+                          href={signal.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Open the full verified article/source"
+                          className="transition-colors hover:text-[#64a8ff] hover:underline hover:decoration-[#64a8ff]/50 hover:underline-offset-4"
+                        >
+                          {signal.title}
+                        </a>
+                      ) : (
+                        signal.title
+                      )}
+                    </h3>
+
+                    <div className="mb-4 flex items-center justify-between gap-1.5 text-[12px]">
+                      <span className="text-war-text-muted">Source:</span>
+                      <span className="truncate font-semibold text-zinc-300 flex items-center gap-1">
+                        <GIcon name="verified" size={13} className="text-blue-400 shrink-0" />
+                        {signal.source}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between border-t border-white/[0.06] pt-3.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-mono tabular-nums text-war-text-muted">{signal.reach} reach</span>
+                        <span
+                          className={clsx(
+                            'text-[11px] font-bold uppercase rounded px-1.5 py-0.2',
+                            signal.sentiment === 'NEGATIVE' && 'bg-red-500/15 text-[#ff6961]',
+                            signal.sentiment === 'POSITIVE' && 'bg-emerald-500/15 text-[#30d158]',
+                            signal.sentiment === 'NEUTRAL' && 'bg-white/10 text-war-text-secondary'
+                          )}
+                        >
+                          {String(signal.sentiment).toLowerCase()}
+                        </span>
+                      </div>
+                      {signal.link ? (
+                        <a
+                          href={signal.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="apple-button flex items-center gap-1 bg-[#0a84ff] px-3 py-1 text-[12px] font-semibold text-white hover:bg-[#409cff]"
+                        >
+                          Source <GIcon name="open_in_new" size={12} />
+                        </a>
+                      ) : (
+                        <button
+                          onClick={investigate}
+                          className="apple-button flex items-center gap-1 bg-[#0a84ff] px-3 py-1 text-[12px] font-semibold text-white hover:bg-[#409cff]"
+                        >
+                          Investigate <GIcon name="arrow_outward" size={13} />
+                        </button>
+                      )}
+                    </div>
+                  </StaggerItem>
+                );
+              })}
           </Stagger>
         )}
 

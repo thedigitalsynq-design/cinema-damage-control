@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { clsx } from 'clsx';
-import { influencers } from '../data/mockData';
+import { influencers as fallbackInfluencers } from '../data/mockData';
 import { LiveBanner } from '../components/LiveBanner';
+import { GIcon } from '../components/GIcon';
 import { useLiveData } from '../hooks/useLiveData';
 import { useProject } from '../components/ProjectContext';
 
@@ -18,9 +19,11 @@ const categoryLabels: Record<string, string> = {
 export function InfluencerIntelligence() {
   const [filter, setFilter] = useState<string>('ALL');
   const categories = ['ALL', 'ACTOR', 'CREATOR', 'JOURNALIST', 'CRITIC', 'FAN_ACCOUNT', 'POLITICAL_FIGURE', 'ENTERTAINMENT_PAGE'];
-  const filtered = filter === 'ALL' ? influencers : influencers.filter((i) => i.category === filter);
   const { project } = useProject();
-  const { liveIncidents, isLive } = useLiveData(project.keywords.join(','));
+  const { liveIncidents, liveInfluencers, isLive, lastUpdated, refresh, isLoading } = useLiveData(project.keywords.join(','));
+
+  const activeInfluencers = liveInfluencers && liveInfluencers.length > 0 ? liveInfluencers : fallbackInfluencers;
+  const filtered = filter === 'ALL' ? activeInfluencers : activeInfluencers.filter((i) => i.category === filter);
 
   const surfacing = (() => {
     if (!isLive) return [];
@@ -36,12 +39,44 @@ export function InfluencerIntelligence() {
       <div className="mx-auto max-w-[1400px] space-y-5">
         <div className="flex flex-wrap items-end justify-between gap-3 pb-1">
           <div>
-            <p className="text-[13px] font-medium text-war-text-muted">Cinema Damage Control Room</p>
+            <div className="flex items-center gap-2">
+              <p className="text-[13px] font-medium text-war-text-muted">Cinema Damage Control Room</p>
+              {isLive ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#30d158]/30 bg-[#30d158]/10 px-2 py-0.5 text-[11px] font-semibold text-[#30d158]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#30d158] animate-pulse" />
+                  LIVE VOICES
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] font-medium text-war-text-muted">
+                  SIMULATED
+                </span>
+              )}
+            </div>
             <h1 className="apple-title mt-0.5">Influencers</h1>
-            <p className="apple-subhead mt-1">Key voices shaping the conversation.</p>
+            <p className="apple-subhead mt-1">Key voices, commentators, and critics shaping sentiment for {project.title}.</p>
           </div>
-          <span className="rounded-full bg-white/[0.07] px-3 py-1.5 text-[12px] font-medium tabular-nums text-war-text-secondary">{filtered.length} voices</span>
+
+          <div className="flex items-center gap-3">
+            <span className="rounded-full bg-white/[0.07] px-3 py-1.5 text-[12px] font-medium tabular-nums text-war-text-secondary">{filtered.length} voices</span>
+            <button
+              onClick={() => refresh()}
+              disabled={isLoading}
+              className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-war-text-secondary transition hover:bg-white/[0.08] hover:text-white disabled:opacity-50"
+            >
+              <GIcon name="refresh" size={13} className={isLoading ? 'animate-spin' : ''} />
+              <span>{isLoading ? 'Syncing...' : 'Sync'}</span>
+            </button>
+          </div>
         </div>
+
+        {lastUpdated && (
+          <div className="flex items-center justify-between text-[12px] text-war-text-muted px-1">
+            <span>Aggregating verified accounts, film critics, trade analysts, and entertainment creators</span>
+            <span className="tabular-nums">
+              Last synced: {new Date(lastUpdated).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          </div>
+        )}
 
         <LiveBanner />
 
@@ -148,7 +183,7 @@ export function InfluencerIntelligence() {
               <line x1={440} y1={50} x2={620} y2={150} stroke="rgba(255,255,255,0.12)" strokeWidth={1} strokeDasharray="4" />
               <line x1={80} y1={150} x2={260} y2={150} stroke="rgba(255,255,255,0.12)" strokeWidth={1} strokeDasharray="4" />
               <line x1={260} y1={150} x2={440} y2={50} stroke="rgba(255,255,255,0.12)" strokeWidth={1} strokeDasharray="4" />
-              {influencers.map((inf, i) => {
+              {activeInfluencers.map((inf, i: number) => {
                 const x = 80 + (i % 4) * 180;
                 const y = 50 + Math.floor(i / 4) * 100;
                 return (

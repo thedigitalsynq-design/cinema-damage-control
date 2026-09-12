@@ -132,11 +132,13 @@ export function D3ThreatTelemetryChart({
   }, [project.title, currentRisk]);
 
   const [data, setData] = useState<TelemetryPoint[]>(() => generateInitialData(timeRange));
+  const [prevKey, setPrevKey] = useState(() => `${project.title}-${timeRange}`);
+  const currentKey = `${project.title}-${timeRange}`;
 
-  // Reset when timeRange or project changes
-  useEffect(() => {
+  if (currentKey !== prevKey) {
+    setPrevKey(currentKey);
     setData(generateInitialData(timeRange));
-  }, [timeRange, generateInitialData]);
+  }
 
   // Real-time live streaming effect: append new tick every 3 seconds if isLiveStreaming is on
   useEffect(() => {

@@ -19,6 +19,7 @@ import { useToast } from '../components/Toaster';
 import { useRoom } from '../components/RoomState';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { ThirtyDaySparkline } from '../components/ThirtyDaySparkline';
+import { saveInterventionToFirestore, subscribeInterventions } from '../lib/firestoreSync';
 
 const TABS = [
   'Overview',
@@ -40,6 +41,12 @@ function nowIST(): string {
   return `${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' })} IST`;
 }
 
+let executionSeq = 0;
+function makeExecutionId(actionId: string): string {
+  executionSeq += 1;
+  return `${actionId}-exec-${executionSeq}`;
+}
+
 export function FilmDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -49,7 +56,8 @@ export function FilmDetail() {
   const { stats, isLive } = useLiveData(project.keywords.join(','));
   const [tab, setTab] = useState<(typeof TABS)[number]>('30-Day Telemetry');
   const [dismissed, setDismissed] = useState<string[]>([]);
-  const [executed, setExecuted] = useState<{ action: DamageAction; at: string }[]>([]);
+  const [executed, setExecuted] = useState<{ id: string; action: DamageAction; at: string }[]>([]);
+  const [executedActionIds, setExecutedActionIds] = useState<string[]>([]);
 
   // State for dynamic film and 30-day telemetry
   const [dynamicFilm, setDynamicFilm] = useState<FilmDamage | null>(null);
@@ -89,6 +97,41 @@ export function FilmDetail() {
     };
   }, [id, staticFilm]);
 
+  // Subscribe to persistent Firestore interventions for this film
+  useEffect(() => {
+    if (!id) return;
+    const unsub = subscribeInterventions(id, (syncedList) => {
+      if (syncedList && syncedList.length > 0) {
+        setExecutedActionIds((prev) => {
+          const ids = new Set(prev);
+          syncedList.forEach((item) => ids.add(item.id.split('-exec-')[0] || item.id));
+          return Array.from(ids);
+        });
+        setExecuted((prev) => {
+          const merged = [...prev];
+          syncedList.forEach((s) => {
+            if (!merged.some((e) => e.id === s.id)) {
+              merged.push({
+                id: s.id,
+                action: {
+                  id: s.id.split('-exec-')[0] || s.id,
+                  title: s.actionTitle,
+                  why: s.why || '',
+                  impact: s.impact || '',
+                  urgency: (s.urgency as any) || 'NOW',
+                  confidence: s.confidence || 90,
+                },
+                at: s.executedAt,
+              });
+            }
+          });
+          return merged;
+        });
+      }
+    });
+    return () => unsub();
+  }, [id]);
+
   const activeFilm = staticFilm || dynamicFilm;
 
   if (loadingDynamic && !activeFilm) {
@@ -127,8 +170,30 @@ export function FilmDetail() {
   const visibleActions = rankActions(activeFilm.actions.filter((a) => !dismissed.includes(a.id)));
 
   const execute = (a: DamageAction) => {
+    if (executedActionIds.includes(a.id)) return;
     apply('approve');
-    setExecuted((prev) => [{ action: a, at: nowIST() }, ...prev]);
+    const execId = makeExecutionId(a.id);
+    const atTime = nowIST();
+    const newRecord = {
+      id: execId,
+      action: a,
+      at: atTime,
+    };
+    setExecutedActionIds((prev) => [...prev, a.id]);
+    setExecuted((prev) => [newRecord, ...prev]);
+
+    // Persist to Cloud Firestore database
+    saveInterventionToFirestore({
+      id: execId,
+      filmId: activeFilm.id,
+      actionTitle: a.title,
+      why: a.why,
+      impact: a.impact,
+      urgency: a.urgency,
+      confidence: a.confidence,
+      executedAt: atTime,
+    });
+
     toast(`${a.title} — executing · risk −4`, 'success');
   };
 
@@ -364,7 +429,7 @@ export function FilmDetail() {
                         <td className="px-4 py-2 font-medium text-white">{day.date}</td>
                         <td className="px-4 py-2 tabular-nums">{day.dayLabel}</td>
                         <td className="px-4 py-2 text-right tabular-nums text-[#64a8ff]">
-                          {day.views.toLocaleString()} views
+                          {(day.views ?? 0).toLocaleString()} views
                         </td>
                         <td className="px-4 py-2 text-right tabular-nums font-semibold">
                           <span
@@ -523,9 +588,15 @@ export function FilmDetail() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => execute(a)}
-                      className="apple-button bg-[#0a84ff] px-4 py-2 text-[13px] font-semibold text-white hover:bg-[#409cff]"
+                      disabled={executedActionIds.includes(a.id)}
+                      className={clsx(
+                        'apple-button px-4 py-2 text-[13px] font-semibold transition',
+                        executedActionIds.includes(a.id)
+                          ? 'bg-[#30d158]/20 text-[#30d158] border border-[#30d158]/30 cursor-default'
+                          : 'bg-[#0a84ff] text-white hover:bg-[#409cff]'
+                      )}
                     >
-                      Deploy Action
+                      {executedActionIds.includes(a.id) ? 'Deployed ✓' : 'Deploy Action'}
                     </button>
                     <button
                       onClick={() => {
@@ -547,9 +618,9 @@ export function FilmDetail() {
               <div className="glass-panel p-5">
                 <div className="section-title mb-3">Interventions Logged</div>
                 <div className="space-y-2">
-                  {executed.map((e) => (
+                  {executed.map((e, idx) => (
                     <div
-                      key={`${e.action.id}-${e.at}`}
+                      key={e.id || `${e.action.id}-${idx}`}
                       className="flex items-center gap-2.5 rounded-xl border border-[#30d158]/25 bg-[#30d158]/[0.07] px-3.5 py-2.5"
                     >
                       <GIcon name="check_circle" size={14} className="shrink-0 text-[#30d158]" />

@@ -17,6 +17,8 @@ const commands = [
   { id: 'generate-brief', label: 'Generate brief', icon: 'description', path: '/reports', category: 'ACTIONS' },
   { id: 'export-report', label: 'Export report', icon: 'description', path: '/reports', category: 'ACTIONS' },
   { id: 'change-film', label: 'Change film', icon: 'movie', path: '/', category: 'NAVIGATION' },
+  { id: 'boxoffice-tracker', label: 'Scan Box Office Consensus (Average Calculator)', icon: 'receipt_long', path: '/', category: 'ACTIONS' },
+  { id: 'free-plugins', label: 'Free Plugins & Tools Hub', icon: 'extension', path: '/', category: 'NAVIGATION' },
   { id: 'view-alerts', label: 'View alerts', icon: 'radio', path: '/signals', category: 'NAVIGATION' },
 ];
 
@@ -30,11 +32,20 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
     cmd.label.toLowerCase().includes(query.toLowerCase())
   );
 
-  useEffect(() => {
+  const [prevOpen, setPrevOpen] = useState(open);
+
+  if (open !== prevOpen) {
+    setPrevOpen(open);
     if (open) {
       setQuery('');
       setSelectedIndex(0);
-      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }
+
+  useEffect(() => {
+    if (open) {
+      const timer = setTimeout(() => inputRef.current?.focus(), 50);
+      return () => clearTimeout(timer);
     }
   }, [open]);
 

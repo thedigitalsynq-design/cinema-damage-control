@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 
 export type ReleasePhase = 'pre' | 'opening' | 'recovery';
 
+// eslint-disable-next-line react/only-export-components
 export const PHASES: { id: ReleasePhase; label: string; short: string; doctrine: string }[] = [
   { id: 'pre', label: 'Pre-release', short: 'Pre', doctrine: 'Silence with readiness — buy options before you need them.' },
   { id: 'opening', label: 'Opening week', short: 'Opening', doctrine: 'Triage ruthlessly — the first 6 hours decide the weekend.' },
@@ -9,12 +10,14 @@ export const PHASES: { id: ReleasePhase; label: string; short: string; doctrine:
 ];
 
 /** Sidebar order per phase. First entry after '/' gets focus priority. */
+// eslint-disable-next-line react/only-export-components
 export const PHASE_ORDERS: Record<ReleasePhase, string[]> = {
   pre: ['/', '/films', '/leaks', '/influencers', '/narratives', '/response', '/reports', '/analyst', '/markets', '/signals', '/incidents', '/social', '/media', '/audience', '/recovery'],
   opening: ['/', '/signals', '/incidents', '/films', '/markets', '/response', '/analyst', '/social', '/leaks', '/narratives', '/media', '/influencers', '/audience', '/recovery', '/reports'],
   recovery: ['/', '/recovery', '/films', '/markets', '/response', '/reports', '/analyst', '/audience', '/narratives', '/media', '/social', '/influencers', '/leaks', '/incidents', '/signals'],
 };
 
+// eslint-disable-next-line react/only-export-components
 export const READINESS_ITEMS = [
   { id: 'baseline', label: 'Baseline captured', detail: '7-day normal sentiment, velocity and reach recorded' },
   { id: 'takedowns', label: 'Takedowns pre-drafted', detail: 'DMCA notices ready for streaming, torrent and Telegram' },
@@ -32,6 +35,7 @@ interface PhaseContextValue {
 
 const PhaseContext = createContext<PhaseContextValue>({ phase: 'opening', setPhase: () => {} });
 
+// eslint-disable-next-line react/only-export-components
 export function usePhase(): PhaseContextValue {
   return useContext(PhaseContext);
 }

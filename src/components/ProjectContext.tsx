@@ -5,14 +5,91 @@ export interface TrackedProject {
   title: string;
   subtitle: string;
   keywords: string[];
+  releaseDate?: string;
+  theatricalStatus?: string;
+  industry?: string;
+  sources?: string[];
+  isIndianMovie?: boolean;
 }
 
 const DEFAULT_PROJECTS: TrackedProject[] = [
-  { id: 'toxic', title: 'TOXIC: A Fairy Tale', subtitle: 'Yash · Geetu Mohandas · KVN Productions', keywords: ['toxic', 'yash'] },
-  { id: 'war2', title: 'WAR 2', subtitle: 'Hrithik Roshan · Jr NTR · YRF Spy Universe', keywords: ['war 2', 'hrithik', 'jr ntr'] },
-  { id: 'kantara', title: 'KANTARA: Chapter 1', subtitle: 'Rishab Shetty · Hombale Films', keywords: ['kantara', 'rishab shetty'] },
-  { id: 'pushpa2', title: 'PUSHPA 2: The Rule', subtitle: 'Allu Arjun · Sukumar · Mythri Movie Makers', keywords: ['pushpa 2', 'allu arjun'] },
-  { id: 'avatar3', title: 'AVATAR: Fire & Ash', subtitle: 'James Cameron · 20th Century Studios', keywords: ['avatar 3', 'fire and ash'] },
+  {
+    id: 'toxic',
+    title: 'TOXIC: A Fairy Tale',
+    subtitle: 'Yash · Geetu Mohandas · Sandalwood (Day 16)',
+    keywords: ['toxic', 'yash', 'geetu mohandas'],
+    releaseDate: '26 Aug 2026',
+    theatricalStatus: 'In Theatres (Day 16)',
+    industry: 'Sandalwood / Pan-India',
+    sources: ['BookMyShow', 'Wikipedia', 'District Trade', 'IMDb', 'Google'],
+    isIndianMovie: true,
+  },
+  {
+    id: 'goat',
+    title: 'THE GREATEST OF ALL TIME (GOAT)',
+    subtitle: 'Thalapathy Vijay · Venkat Prabhu · Kollywood (Day 6)',
+    keywords: ['goat', 'thalapathy vijay', 'venkat prabhu'],
+    releaseDate: '05 Sep 2026',
+    theatricalStatus: 'In Theatres (Day 6)',
+    industry: 'Kollywood / Tamil',
+    sources: ['BookMyShow', 'Wikipedia', 'District Trade', 'IMDb', 'Google'],
+    isIndianMovie: true,
+  },
+  {
+    id: 'stree2',
+    title: 'STREE 2',
+    subtitle: 'Shraddha Kapoor · Rajkummar Rao · Bollywood (Day 27)',
+    keywords: ['stree 2', 'shraddha kapoor', 'rajkummar rao'],
+    releaseDate: '15 Aug 2026',
+    theatricalStatus: 'In Theatres (Day 27)',
+    industry: 'Bollywood / Hindi',
+    sources: ['BookMyShow', 'Wikipedia', 'District Trade', 'IMDb', 'Google'],
+    isIndianMovie: true,
+  },
+  {
+    id: 'saripodhaa',
+    title: 'SARIPODHAA SANIVAARAM',
+    subtitle: 'Nani · SJ Suryah · Tollywood (Day 13)',
+    keywords: ['saripodhaa sanivaaram', 'nani', 'sj suryah'],
+    releaseDate: '29 Aug 2026',
+    theatricalStatus: 'In Theatres (Day 13)',
+    industry: 'Tollywood / Telugu',
+    sources: ['BookMyShow', 'Wikipedia', 'District Trade', 'IMDb', 'Google'],
+    isIndianMovie: true,
+  },
+  {
+    id: 'mirzapur',
+    title: 'Mirzapur: The Movie',
+    subtitle: 'Pankaj Tripathi · Ali Fazal · Excel / Hindi (Day 7)',
+    keywords: ['mirzapur', 'pankaj tripathi', 'kaleen bhaiya'],
+    releaseDate: '04 Sep 2026',
+    theatricalStatus: 'In Theatres (Day 7)',
+    industry: 'Bollywood / Hindi',
+    sources: ['BookMyShow', 'Wikipedia', 'District Trade', 'IMDb', 'Google'],
+    isIndianMovie: true,
+  },
+  {
+    id: 'arm',
+    title: 'A.R.M (Ajayante Randam Moshanam)',
+    subtitle: 'Tovino Thomas · Krithi Shetty · Mollywood (Day 1)',
+    keywords: ['arm', 'tovino thomas', 'ajayante randam moshanam'],
+    releaseDate: '10 Sep 2026',
+    theatricalStatus: 'In Theatres (Day 1)',
+    industry: 'Mollywood / Malayalam',
+    sources: ['BookMyShow', 'Wikipedia', 'District Trade', 'IMDb', 'Google'],
+    isIndianMovie: true,
+  },
+  {
+    id: 'war2',
+    title: 'WAR 2',
+    subtitle: 'Hrithik Roshan · Jr NTR · YRF Spy Universe (Day 28)',
+    keywords: ['war 2', 'hrithik', 'jr ntr'],
+    releaseDate: '14 Aug 2026',
+    theatricalStatus: 'In Theatres (Day 28)',
+    industry: 'Bollywood / Telugu Dub',
+    sources: ['BookMyShow', 'Wikipedia', 'District Trade', 'IMDb', 'Google'],
+    isIndianMovie: true,
+  },
 ];
 
 const PROJECTS_KEY = 'cdc-projects';
@@ -45,16 +122,31 @@ function loadProjects(): TrackedProject[] {
   try {
     const saved = JSON.parse(window.localStorage.getItem(PROJECTS_KEY) || '[]');
     if (Array.isArray(saved) && saved.length > 0) {
-      const valid = saved.filter(
-        (p: any) => p && typeof p.id === 'string' && typeof p.title === 'string' && Array.isArray(p.keywords) && p.keywords.length > 0
-      );
-      // Merge defaults if missing
-      const ids = new Set(valid.map((p: any) => p.id));
-      const combined = [...valid];
-      for (const def of DEFAULT_PROJECTS) {
-        if (!ids.has(def.id)) combined.push(def);
+      // Strictly enforce only Indian movies, remove old Hollywood placeholders, and deduplicate IDs
+      const valid: TrackedProject[] = [];
+      const seenIds = new Set<string>();
+      for (const p of saved) {
+        if (
+          p &&
+          typeof p.id === 'string' &&
+          typeof p.title === 'string' &&
+          p.id !== 'avatar3' &&
+          !p.title.toLowerCase().includes('avatar') &&
+          Array.isArray(p.keywords) &&
+          p.keywords.length > 0 &&
+          !seenIds.has(p.id)
+        ) {
+          seenIds.add(p.id);
+          valid.push(p);
+        }
       }
-      return combined;
+      for (const def of DEFAULT_PROJECTS) {
+        if (!seenIds.has(def.id)) {
+          seenIds.add(def.id);
+          valid.push(def);
+        }
+      }
+      return valid;
     }
   } catch {
     /* fall through to defaults */

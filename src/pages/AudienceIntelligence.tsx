@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { clsx } from 'clsx';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, AreaChart, Area } from 'recharts';
-import { audienceSegments, geographyData, languageData } from '../data/mockData';
+import { audienceSegments as fallbackSegments, geographyData as fallbackGeography, languageData as fallbackLanguage } from '../data/mockData';
 import { LiveBanner } from '../components/LiveBanner';
+import { GIcon } from '../components/GIcon';
+import { useLiveData } from '../hooks/useLiveData';
 import { useProject } from '../components/ProjectContext';
 import { api, formatCompact } from '../data/apiService';
 
@@ -16,7 +18,12 @@ const tooltipStyle = {
 
 export function AudienceIntelligence() {
   const { project } = useProject();
+  const { liveAudience, isLive, lastUpdated, refresh, isLoading } = useLiveData(project.keywords.join(','));
   const [interest, setInterest] = useState<{ article: string; days: { date: string; views: number }[]; total: number } | null>(null);
+
+  const currentSegments = liveAudience?.audienceSegments || fallbackSegments;
+  const currentGeography = liveAudience?.geographyData || fallbackGeography;
+  const currentLanguage = liveAudience?.languageData || fallbackLanguage;
 
   useEffect(() => {
     let cancelled = false;
@@ -38,11 +45,45 @@ export function AudienceIntelligence() {
   return (
     <div className="flex-1 overflow-y-auto px-6 py-6 lg:px-8">
       <div className="mx-auto max-w-[1400px] space-y-5">
-        <div className="pb-1">
-          <p className="text-[13px] font-medium text-war-text-muted">Cinema Damage Control Room</p>
-          <h1 className="apple-title mt-0.5">Audience</h1>
-          <p className="apple-subhead mt-1">Audience segmentation and geographic distribution.</p>
+        <div className="flex flex-wrap items-end justify-between gap-3 pb-1">
+          <div>
+            <div className="flex items-center gap-2">
+              <p className="text-[13px] font-medium text-war-text-muted">Cinema Damage Control Room</p>
+              {isLive ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#30d158]/30 bg-[#30d158]/10 px-2 py-0.5 text-[11px] font-semibold text-[#30d158]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#30d158] animate-pulse" />
+                  LIVE DEMOGRAPHICS
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] font-medium text-war-text-muted">
+                  SIMULATED
+                </span>
+              )}
+            </div>
+            <h1 className="apple-title mt-0.5">Audience</h1>
+            <p className="apple-subhead mt-1">Audience segmentation, geographic spread, and Wikipedia curiosity trajectory for {project.title}.</p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => refresh()}
+              disabled={isLoading}
+              className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-war-text-secondary transition hover:bg-white/[0.08] hover:text-white disabled:opacity-50"
+            >
+              <GIcon name="refresh" size={13} className={isLoading ? 'animate-spin' : ''} />
+              <span>{isLoading ? 'Syncing...' : 'Sync'}</span>
+            </button>
+          </div>
         </div>
+
+        {lastUpdated && (
+          <div className="flex items-center justify-between text-[12px] text-war-text-muted px-1">
+            <span>Dynamic audience segmentation mapped to real-time conversation volume and Wikimedia queries</span>
+            <span className="tabular-nums">
+              Last synced: {new Date(lastUpdated).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          </div>
+        )}
 
         <LiveBanner />
 
@@ -78,10 +119,10 @@ export function AudienceIntelligence() {
         <div className="glass-panel p-5">
           <div className="mb-4 flex items-baseline justify-between">
             <span className="section-title">Audience segments</span>
-            <span className="apple-footnote">{audienceSegments.length} segments</span>
+            <span className="apple-footnote">{currentSegments.length} segments</span>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-            {audienceSegments.map((seg) => (
+            {currentSegments.map((seg) => (
               <div key={seg.name} className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-4">
                 <div className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-war-text-muted">{seg.name}</div>
                 <div className="space-y-2.5">
@@ -123,12 +164,12 @@ export function AudienceIntelligence() {
           <div className="glass-panel p-5">
             <div className="section-title mb-4">Geography · India</div>
             <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={geographyData} layout="vertical" margin={{ top: 0, right: 20, left: 70, bottom: 0 }}>
+              <BarChart data={currentGeography} layout="vertical" margin={{ top: 0, right: 20, left: 70, bottom: 0 }}>
                 <XAxis type="number" tick={{ fontSize: 11, fill: '#6e6e73' }} axisLine={false} tickLine={false} />
                 <YAxis type="category" dataKey="state" tick={{ fontSize: 12, fill: '#a1a1a6' }} axisLine={false} tickLine={false} width={70} />
                 <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: '#a1a1a6' }} />
                 <Bar dataKey="mentions" radius={[4, 8, 8, 4]}>
-                  {geographyData.map((entry, i) => (
+                  {currentGeography.map((entry, i) => (
                     <Cell
                       key={i}
                       fill={entry.sentiment < -40 ? '#ff453a' : entry.sentiment < -25 ? '#ff9f0a' : '#ffd60a'}
@@ -144,12 +185,12 @@ export function AudienceIntelligence() {
           <div className="glass-panel p-5">
             <div className="section-title mb-4">Languages</div>
             <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={languageData} layout="vertical" margin={{ top: 0, right: 20, left: 70, bottom: 0 }}>
+              <BarChart data={currentLanguage} layout="vertical" margin={{ top: 0, right: 20, left: 70, bottom: 0 }}>
                 <XAxis type="number" tick={{ fontSize: 11, fill: '#6e6e73' }} axisLine={false} tickLine={false} />
                 <YAxis type="category" dataKey="language" tick={{ fontSize: 12, fill: '#a1a1a6' }} axisLine={false} tickLine={false} width={70} />
                 <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: '#a1a1a6' }} />
                 <Bar dataKey="mentions" radius={[4, 8, 8, 4]}>
-                  {languageData.map((entry, i) => (
+                  {currentLanguage.map((entry, i) => (
                     <Cell
                       key={i}
                       fill={entry.sentiment < -35 ? '#ff453a' : entry.sentiment < -20 ? '#ff9f0a' : '#ffd60a'}

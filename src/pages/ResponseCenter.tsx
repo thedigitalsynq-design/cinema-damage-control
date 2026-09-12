@@ -1,14 +1,21 @@
 import { useState } from 'react';
 import { clsx } from 'clsx';
 import { GIcon } from '../components/GIcon';
-import { incidents } from '../data/mockData';
+import { incidents as fallbackIncidents } from '../data/mockData';
 import { useToast } from '../components/Toaster';
 import { LiveBanner } from '../components/LiveBanner';
 import { useRoom, type RoomActionKind } from '../components/RoomState';
 import { useProject } from '../components/ProjectContext';
 import { useLiveData } from '../hooks/useLiveData';
+import { useLiveDataContext } from '../context/LiveDataContext';
 import { activeCrises } from '../data/damage';
 import { projectLoss } from '../data/algorithm';
+import {
+  dispatchResolveIncident,
+  dispatchPlaybookExecution,
+  dispatchAction,
+} from '../lib/actionDispatcher';
+import { CountermeasureModal } from '../components/CountermeasureModal';
 
 interface ExecutionEntry {
   id: number;
@@ -64,14 +71,22 @@ const urgencyStyles: Record<string, string> = {
 
 export function ResponseCenter() {
   const { project } = useProject();
-  const { stats, isLive } = useLiveData(project.keywords.join(','));
+  const { stats, isLive, liveIncidents } = useLiveData(project.keywords.join(','));
+  const { resolveIncident } = useLiveDataContext();
+  const [isCountermeasureOpen, setIsCountermeasureOpen] = useState(false);
+
+  const availableIncidents = liveIncidents && liveIncidents.length > 0 ? liveIncidents : fallbackIncidents;
+  const activeIncidents = availableIncidents.filter((i) => i.status !== 'RESOLVED');
+
+  const [selectedIncidentId, setSelectedIncidentId] = useState<string>('');
+  const selectedIncident = activeIncidents.find((i) => i.id === selectedIncidentId) || activeIncidents[0] || availableIncidents[0];
+
   const velocity = isLive && stats ? stats.velocityPct : 38;
   const exposure = (() => {
     const m = (activeCrises[0]?.revenueAtRisk || '').match(/[\d.]+/);
     return m ? parseFloat(m[0]) : 8;
   })();
   const sim = projectLoss(exposure, velocity);
-  const [selectedIncident, setSelectedIncident] = useState(incidents[0]);
   const [dismissedPlays, setDismissedPlays] = useState<string[]>([]);
   const [log, setLog] = useState<ExecutionEntry[]>(initialLog);
   const toast = useToast();
@@ -80,6 +95,18 @@ export function ResponseCenter() {
   const decide = (tone: ExecutionEntry['tone'], message: string, kind: RoomActionKind) => {
     if (!selectedIncident) return;
     apply(kind);
+
+    if (tone === 'approved') {
+      resolveIncident(selectedIncident.id);
+      dispatchResolveIncident(selectedIncident.id, selectedIncident.title);
+    } else if (tone === 'escalated') {
+      dispatchAction('ESCALATE_INCIDENT', 'INCIDENT', `Escalated to C-Suite: ${selectedIncident.code}`, `Incident ${selectedIncident.title} escalated for Board attention.`, { incidentId: selectedIncident.id });
+    } else if (tone === 'rejected') {
+      dispatchAction('REJECT_RECOMMENDATION', 'INCIDENT', `Recommendation Rejected: ${selectedIncident.code}`, `Risk increased +3. Reason: Rejected by leadership.`, { incidentId: selectedIncident.id });
+    } else {
+      dispatchAction('MODIFY_PLAN', 'INCIDENT', `Modification Requested: ${selectedIncident.code}`, `Sent back for revision: ${selectedIncident.title}`, { incidentId: selectedIncident.id });
+    }
+
     setLog((prev) => [
       {
         id: Date.now(),
@@ -97,10 +124,20 @@ export function ResponseCenter() {
   return (
     <div className="flex-1 overflow-y-auto px-6 py-6 lg:px-8">
       <div className="mx-auto max-w-[1400px] space-y-5">
-        <div className="pb-1">
-          <p className="text-[13px] font-medium text-war-text-muted">Cinema Damage Control Room</p>
-          <h1 className="apple-title mt-0.5">Response</h1>
-          <p className="apple-subhead mt-1">Decide, approve, and execute.</p>
+        <div className="flex flex-wrap items-end justify-between gap-3 pb-1">
+          <div>
+            <p className="text-[13px] font-medium text-war-text-muted">Cinema Damage Control Room</p>
+            <h1 className="apple-title mt-0.5">Response</h1>
+            <p className="apple-subhead mt-1">Decide, approve, and execute mitigation protocols for {project.title}.</p>
+          </div>
+
+          <button
+            onClick={() => setIsCountermeasureOpen(true)}
+            className="apple-button flex items-center gap-1.5 bg-[#0a84ff] px-4 py-2 text-[13px] font-semibold text-white hover:bg-[#409cff]"
+          >
+            <GIcon name="send" size={14} />
+            <span>Deploy Official Dispatch</span>
+          </button>
         </div>
 
         <LiveBanner />
@@ -111,37 +148,45 @@ export function ResponseCenter() {
           <div className="glass-panel p-5">
             <div className="mb-4 flex items-baseline justify-between">
               <span className="section-title">Incoming</span>
-              <span className="apple-footnote">{incidents.filter(i => i.status !== 'RESOLVED').length} open</span>
+              <span className="apple-footnote">{activeIncidents.length} open</span>
             </div>
             <div className="space-y-2">
-              {incidents.filter(i => i.status !== 'RESOLVED').map((inc) => (
-                <button
-                  key={inc.id}
-                  onClick={() => setSelectedIncident(inc)}
-                  className={clsx(
-                    'w-full rounded-2xl border p-3.5 text-left transition-all active:scale-[0.99]',
-                    selectedIncident?.id === inc.id
-                      ? 'border-[#0a84ff]/50 bg-[#0a84ff]/12'
-                      : 'border-white/[0.07] bg-white/[0.03] hover:border-white/[0.14] hover:bg-white/[0.05]'
-                  )}
-                >
-                  <div className="mb-1 flex items-center justify-between">
-                    <span className={clsx(
-                      'text-[12px] font-semibold capitalize',
-                      inc.severity === 'CRITICAL' && 'text-[#ff6961]',
-                      inc.severity === 'HIGH' && 'text-[#ffb340]',
-                      inc.severity === 'MEDIUM' && 'text-[#ffd60a]',
-                      inc.severity === 'LOW' && 'text-[#64a8ff]'
-                    )}>{inc.severity.toLowerCase()}</span>
-                    <span className="font-mono text-[12px] text-war-text-muted">{inc.code}</span>
-                  </div>
-                  <p className="text-[14px] font-medium leading-snug text-white">{inc.title}</p>
-                  <div className="mt-1.5 flex items-center gap-3">
-                    <span className="text-[12px] tabular-nums text-war-text-muted">Velocity {inc.velocity}</span>
-                    <span className="text-[12px] tabular-nums text-war-text-muted">Reach {inc.reach}</span>
-                  </div>
-                </button>
-              ))}
+              {activeIncidents.length === 0 ? (
+                <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6 text-center">
+                  <GIcon name="check_circle" size={24} className="mx-auto text-[#30d158] mb-2" />
+                  <p className="text-[13px] font-semibold text-white">All Active Vectors Neutralized</p>
+                  <p className="text-[12px] text-war-text-muted mt-0.5">Radar is clear. Continue background monitoring.</p>
+                </div>
+              ) : (
+                activeIncidents.map((inc) => (
+                  <button
+                    key={inc.id}
+                    onClick={() => setSelectedIncidentId(inc.id)}
+                    className={clsx(
+                      'w-full rounded-2xl border p-3.5 text-left transition-all active:scale-[0.99]',
+                      selectedIncident?.id === inc.id
+                        ? 'border-[#0a84ff]/50 bg-[#0a84ff]/12'
+                        : 'border-white/[0.07] bg-white/[0.03] hover:border-white/[0.14] hover:bg-white/[0.05]'
+                    )}
+                  >
+                    <div className="mb-1 flex items-center justify-between">
+                      <span className={clsx(
+                        'text-[12px] font-semibold capitalize',
+                        inc.severity === 'CRITICAL' && 'text-[#ff6961]',
+                        inc.severity === 'HIGH' && 'text-[#ffb340]',
+                        inc.severity === 'MEDIUM' && 'text-[#ffd60a]',
+                        inc.severity === 'LOW' && 'text-[#64a8ff]'
+                      )}>{inc.severity.toLowerCase()}</span>
+                      <span className="font-mono text-[12px] text-war-text-muted">{inc.code}</span>
+                    </div>
+                    <p className="text-[14px] font-medium leading-snug text-white">{inc.title}</p>
+                    <div className="mt-1.5 flex items-center gap-3">
+                      <span className="text-[12px] tabular-nums text-war-text-muted">Velocity {inc.velocity}</span>
+                      <span className="text-[12px] tabular-nums text-war-text-muted">Reach {inc.reach}</span>
+                    </div>
+                  </button>
+                ))
+              )}
             </div>
           </div>
 
@@ -248,6 +293,7 @@ export function ResponseCenter() {
                   <button
                     onClick={() => {
                       apply('approve');
+                      dispatchPlaybookExecution(pb.name, pb.objective, project.title);
                       setLog((prev) => [{
                         id: Date.now(),
                         tone: 'approved',
@@ -302,6 +348,11 @@ export function ResponseCenter() {
           </div>
         </div>
       </div>
+
+      <CountermeasureModal
+        isOpen={isCountermeasureOpen}
+        onClose={() => setIsCountermeasureOpen(false)}
+      />
     </div>
   );
 }

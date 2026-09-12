@@ -1,5 +1,5 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useState, useEffect, lazy, Suspense, type ReactNode } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { MotionConfig } from 'framer-motion';
 import { Sidebar } from './components/Sidebar';
 import { TopNav } from './components/TopNav';
@@ -9,6 +9,10 @@ import { ToastProvider } from './components/Toaster';
 import { PhaseProvider } from './components/PhaseContext';
 import { ProjectProvider } from './components/ProjectContext';
 import { RoomProvider } from './components/RoomState';
+import { ThemeProvider } from './components/ThemeContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { AuthProvider } from './components/AuthContext';
+import { LiveDataProvider } from './context/LiveDataContext';
 
 // Route-level code splitting: each page loads on demand instead of one 700KB+ chunk.
 const CommandCenter = lazy(() => import('./pages/CommandCenter').then((m) => ({ default: m.CommandCenter })));
@@ -37,6 +41,11 @@ function PageFallback() {
   );
 }
 
+function RouteErrorBoundary({ children }: { children: ReactNode }) {
+  const location = useLocation();
+  return <ErrorBoundary key={location.pathname}>{children}</ErrorBoundary>;
+}
+
 function App() {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
@@ -56,47 +65,63 @@ function App() {
 
   return (
     <BrowserRouter basename={basename}>
-      <ToastProvider>
-      <PhaseProvider>
-      <ProjectProvider>
-      <RoomProvider>
-      <MotionConfig reducedMotion="user">
-      <div className="flex h-screen w-screen overflow-hidden bg-black text-[#f5f5f7]">
-        <Sidebar />
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <TopNav onOpenCommandPalette={() => setCommandPaletteOpen(true)} />
-          <main className="flex flex-1 flex-col overflow-hidden bg-black">
-            <Suspense fallback={<PageFallback />}>
-              <Routes>
-                <Route path="/" element={<CommandCenter />} />
-                <Route path="/signals" element={<LiveSignals />} />
-                <Route path="/incidents" element={<Incidents />} />
-                <Route path="/narratives" element={<Narratives />} />
-                <Route path="/social" element={<SocialIntelligence />} />
-                <Route path="/media" element={<MediaIntelligence />} />
-                <Route path="/influencers" element={<InfluencerIntelligence />} />
-                <Route path="/audience" element={<AudienceIntelligence />} />
-                <Route path="/response" element={<ResponseCenter />} />
-                <Route path="/recovery" element={<Recovery />} />
-                <Route path="/reports" element={<Reports />} />
-                <Route path="/leaks" element={<Leaks />} />
-                <Route path="/analyst" element={<Analyst />} />
-                <Route path="/films" element={<Films />} />
-                <Route path="/film/:id" element={<FilmDetail />} />
-                <Route path="/markets" element={<Markets />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </Suspense>
-          </main>
-        </div>
-      </div>
-      <CommandPalette open={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} />
-      <GooeyActions onOpenCommandPalette={() => setCommandPaletteOpen(true)} />
-      </MotionConfig>
-      </RoomProvider>
-      </ProjectProvider>
-      </PhaseProvider>
-      </ToastProvider>
+      <AuthProvider>
+        <ThemeProvider>
+          <ToastProvider>
+          <PhaseProvider>
+          <ProjectProvider>
+            <LiveDataProvider>
+              <RoomProvider>
+                <MotionConfig reducedMotion="user">
+                  <div className="relative flex h-screen w-screen overflow-hidden p-2 sm:p-3 gap-2.5 sm:gap-3 bg-[var(--color-war-bg)] text-[var(--color-war-text)] transition-colors duration-500">
+                    {/* Atmospheric ambient lighting blooms */}
+                    <div className="pointer-events-none absolute -top-32 -left-32 h-[420px] w-[420px] rounded-full bg-indigo-950/40 blur-[130px]" />
+                    <div className="pointer-events-none absolute top-1/3 -right-32 h-[480px] w-[480px] rounded-full bg-sky-950/30 blur-[140px]" />
+                    <div className="pointer-events-none absolute -bottom-32 left-1/3 h-[400px] w-[400px] rounded-full bg-purple-950/30 blur-[130px]" />
+
+                    {/* Floating Glass Sidebar Rail */}
+                    <Sidebar />
+
+                    {/* Floating Bento Workspace Card */}
+                    <div className="relative flex flex-1 flex-col overflow-hidden rounded-[26px] border border-[var(--color-war-border-light)] bg-[var(--color-war-surface)] backdrop-blur-2xl shadow-[var(--shadow-spatial-float)] transition-all duration-500">
+                      <TopNav onOpenCommandPalette={() => setCommandPaletteOpen(true)} />
+                      <main className="flex flex-1 flex-col overflow-hidden bg-transparent transition-colors duration-500">
+                        <RouteErrorBoundary>
+                          <Suspense fallback={<PageFallback />}>
+                            <Routes>
+                              <Route path="/" element={<CommandCenter />} />
+                              <Route path="/signals" element={<LiveSignals />} />
+                              <Route path="/incidents" element={<Incidents />} />
+                              <Route path="/narratives" element={<Narratives />} />
+                              <Route path="/social" element={<SocialIntelligence />} />
+                              <Route path="/media" element={<MediaIntelligence />} />
+                              <Route path="/influencers" element={<InfluencerIntelligence />} />
+                              <Route path="/audience" element={<AudienceIntelligence />} />
+                              <Route path="/response" element={<ResponseCenter />} />
+                              <Route path="/recovery" element={<Recovery />} />
+                              <Route path="/reports" element={<Reports />} />
+                              <Route path="/leaks" element={<Leaks />} />
+                              <Route path="/analyst" element={<Analyst />} />
+                              <Route path="/films" element={<Films />} />
+                              <Route path="/film/:id" element={<FilmDetail />} />
+                              <Route path="/markets" element={<Markets />} />
+                              <Route path="*" element={<Navigate to="/" replace />} />
+                            </Routes>
+                          </Suspense>
+                        </RouteErrorBoundary>
+                      </main>
+                    </div>
+                  </div>
+                  <CommandPalette open={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} />
+                  <GooeyActions onOpenCommandPalette={() => setCommandPaletteOpen(true)} />
+                </MotionConfig>
+              </RoomProvider>
+            </LiveDataProvider>
+          </ProjectProvider>
+        </PhaseProvider>
+        </ToastProvider>
+      </ThemeProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

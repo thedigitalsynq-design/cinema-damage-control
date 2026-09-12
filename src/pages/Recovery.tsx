@@ -4,6 +4,7 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import { useLiveData } from '../hooks/useLiveData';
 import { useProject } from '../components/ProjectContext';
 
+// eslint-disable-next-line react/only-export-components
 export const recoveryData = [
   { day: 'Day 1', risk: 72, negative: 78, positive: 8, confidence: 12 },
   { day: 'Day 2', risk: 68, negative: 72, positive: 14, confidence: 18 },
@@ -57,16 +58,45 @@ const recoveryMetrics = [
 
 export function Recovery() {
   const { project } = useProject();
-  const { stats, isLive, lastUpdated } = useLiveData(project.keywords.join(','));
+  const { stats, isLive, lastUpdated, liveRecovery, refresh, isLoading } = useLiveData(project.keywords.join(','));
   const live = isLive && stats;
+
+  const currentPhases = liveRecovery?.phases || phases;
+  const currentMetrics = liveRecovery?.recoveryMetrics || recoveryMetrics;
+  const currentData = liveRecovery?.recoveryData || recoveryData;
 
   return (
     <div className="flex-1 overflow-y-auto px-6 py-6 lg:px-8">
       <div className="mx-auto max-w-[1400px] space-y-5">
-        <div className="pb-1">
-          <p className="text-[13px] font-medium text-war-text-muted">Cinema Damage Control Room</p>
-          <h1 className="apple-title mt-0.5">Recovery</h1>
-          <p className="apple-subhead mt-1">Post-crisis reputation recovery trajectory.</p>
+        <div className="flex flex-wrap items-end justify-between gap-3 pb-1">
+          <div>
+            <div className="flex items-center gap-2">
+              <p className="text-[13px] font-medium text-war-text-muted">Cinema Damage Control Room</p>
+              {isLive ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#30d158]/30 bg-[#30d158]/10 px-2 py-0.5 text-[11px] font-semibold text-[#30d158]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#30d158] animate-pulse" />
+                  LIVE TRAJECTORY
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] font-medium text-war-text-muted">
+                  SIMULATED
+                </span>
+              )}
+            </div>
+            <h1 className="apple-title mt-0.5">Recovery</h1>
+            <p className="apple-subhead mt-1">Post-crisis reputation and commercial recovery trajectory for {project.title}.</p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => refresh()}
+              disabled={isLoading}
+              className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-war-text-secondary transition hover:bg-white/[0.08] hover:text-white disabled:opacity-50"
+            >
+              <GIcon name="refresh" size={13} className={isLoading ? 'animate-spin' : ''} />
+              <span>{isLoading ? 'Recalculating...' : 'Recalculate'}</span>
+            </button>
+          </div>
         </div>
 
         {live && (
@@ -75,7 +105,7 @@ export function Recovery() {
               <GIcon name="radio" size={11} className="status-pulse" /> Live now
             </span>
             <span className="text-[12px] tabular-nums text-war-text-secondary">
-              {live.negPct}% negative across {live.total} stories · model trajectory below
+              {live.negPct}% negative across {live.total} stories · algorithmic model trajectory calibrated to {project.title}
             </span>
             {lastUpdated && (
               <span className="ml-auto text-[11px] tabular-nums text-war-text-muted">
@@ -89,7 +119,7 @@ export function Recovery() {
         <div className="glass-panel p-5">
           <div className="section-title mb-4">Recovery status</div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
-            {recoveryMetrics.map((m) => (
+            {currentMetrics.map((m: { label: string; current: string; target: string; progress: number }) => (
               <div key={m.label} className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-4">
                 <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-war-text-muted">{m.label}</div>
                 <div className="flex items-baseline gap-2">
@@ -111,7 +141,7 @@ export function Recovery() {
         <div className="glass-panel p-5">
           <div className="section-title mb-4">Recovery trajectory</div>
           <div className="mb-6 grid grid-cols-1 gap-2.5 md:grid-cols-3">
-            {phases.map((phase, i) => (
+            {currentPhases.map((phase: { name: string; status: string; pill: string; metrics: { label: string; value: string }[] }, i: number) => (
               <div key={phase.name} className="flex items-stretch gap-2.5">
                 <div className="flex-1 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
                   <div className="mb-2.5 flex items-center justify-between">
@@ -119,7 +149,7 @@ export function Recovery() {
                     <span className={clsx('rounded-full px-2.5 py-1 text-[11px] font-semibold', phase.pill)}>{phase.status}</span>
                   </div>
                   <div className="space-y-1.5">
-                    {phase.metrics.map((m) => (
+                    {phase.metrics.map((m: { label: string; value: string }) => (
                       <div key={m.label} className="flex items-center justify-between text-[13px]">
                         <span className="text-war-text-muted">{m.label}</span>
                         <span className="font-semibold tabular-nums text-war-text-secondary">{m.value}</span>
@@ -127,7 +157,7 @@ export function Recovery() {
                     ))}
                   </div>
                 </div>
-                {i < phases.length - 1 && (
+                {i < currentPhases.length - 1 && (
                   <GIcon name="arrow_forward" size={15} className="hidden shrink-0 self-center text-war-text-muted md:block" />
                 )}
               </div>
@@ -135,7 +165,7 @@ export function Recovery() {
           </div>
 
           <ResponsiveContainer width="100%" height={220}>
-            <AreaChart data={recoveryData} margin={{ top: 5, right: 20, left: -18, bottom: 0 }}>
+            <AreaChart data={currentData} margin={{ top: 5, right: 20, left: -18, bottom: 0 }}>
               <defs>
                 <linearGradient id="riskRecoveryGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#ff453a" stopOpacity={0.4} />

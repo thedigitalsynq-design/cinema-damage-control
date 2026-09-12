@@ -25,7 +25,7 @@ export function Analyst() {
   const { phase, setPhase } = usePhase();
   const { pressure } = useRoom();
   const { project } = useProject();
-  const { news, stats, isLive, lastUpdated, refresh } = useLiveData(project.keywords.join(','));
+  const { news, stats, isLive, lastUpdated, refresh, liveIncidents, liveLeaks, isLoading } = useLiveData(project.keywords.join(','));
 
   const [messages, setMessages] = useState<RichMessage[]>([
     {
@@ -76,7 +76,9 @@ export function Analyst() {
     } catch {
       /* ignore */
     }
-    const activeInc = incidents.filter((i) => i.status !== 'RESOLVED');
+    const effectiveIncidents = isLive && liveIncidents && liveIncidents.length > 0 ? liveIncidents : incidents;
+    const effectiveLeaks = liveLeaks && liveLeaks.length > 0 ? liveLeaks : leakLinks;
+    const activeInc = effectiveIncidents.filter((i) => i.status !== 'RESOLVED');
     const reply = await analystAnswer(
       {
         film: `${project.title} (${project.subtitle})`,
@@ -91,7 +93,7 @@ export function Analyst() {
         trending: stats && stats.trending.length > 0 ? stats.trending.map((t) => `${t.term}(${t.mentions})`).join(', ') : '—',
         activeIncidents: activeInc.length,
         topIncidents: activeInc.slice(0, 3).map((i) => `${i.title.slice(0, 40)} [${i.severity}]`).join('; ') || '—',
-        activeLeaks: leakLinks.filter((l) => l.status === 'ACTIVE').length,
+        activeLeaks: effectiveLeaks.filter((l) => l.status === 'ACTIVE').length,
         signals: news.length,
         readiness,
         interventions: `risk ${pressure.risk >= 0 ? '+' : ''}${Math.round(pressure.risk)}, velocity ${pressure.velocity >= 0 ? '+' : ''}${Math.round(pressure.velocity)} (decays ~10%/min)`,
@@ -116,17 +118,27 @@ export function Analyst() {
           <div>
             <p className="text-[13px] font-medium text-war-text-muted">Cinema Damage Control Room</p>
             <h1 className="apple-title mt-0.5">Analyst</h1>
-            <p className="apple-subhead mt-1">Free AI discussion over live room data — no keys, offline fallback.</p>
+            <p className="apple-subhead mt-1">Free AI discussion over live room data — real-time feeds & offline fallback.</p>
           </div>
-          <span className={clsx(
-            'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-semibold',
-            engine === 'ai' ? 'bg-[#30d158]/15 text-[#30d158]'
-            : engine === 'local' ? 'bg-[#ffd60a]/15 text-[#ffd60a]'
-            : 'bg-white/[0.07] text-war-text-secondary'
-          )}>
-            <GIcon name="auto_awesome" size={12} />
-            {engine === 'ai' ? 'AI analyst · online' : engine === 'local' ? 'Local analyst · offline mode' : 'Analyst · ready'}
-          </span>
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => refresh()}
+              disabled={isLoading}
+              className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-war-text-secondary transition hover:bg-white/[0.08] hover:text-white disabled:opacity-50"
+            >
+              <GIcon name="refresh" size={12} className={isLoading ? 'animate-spin' : ''} />
+              <span>{isLoading ? 'Syncing...' : 'Sync'}</span>
+            </button>
+            <span className={clsx(
+              'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-semibold',
+              engine === 'ai' ? 'bg-[#30d158]/15 text-[#30d158]'
+              : engine === 'local' ? 'bg-[#ffd60a]/15 text-[#ffd60a]'
+              : 'bg-white/[0.07] text-war-text-secondary'
+            )}>
+              <GIcon name="auto_awesome" size={12} />
+              {engine === 'ai' ? 'AI analyst · online' : engine === 'local' ? 'Local analyst · offline mode' : 'Analyst · ready'}
+            </span>
+          </div>
         </div>
 
         <div ref={scrollRef} className="glass-panel mb-3 flex-1 space-y-3 overflow-y-auto p-4">

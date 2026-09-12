@@ -1,13 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { clsx } from 'clsx';
 import { AnimatePresence, motion } from 'framer-motion';
 import { GIcon } from '../components/GIcon';
-import { leakLinks } from '../data/mockData';
+import { leakLinks as fallbackLeaks } from '../data/mockData';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { Stagger, StaggerItem } from '../components/motion';
 import { useToast } from '../components/Toaster';
 import { useRoom } from '../components/RoomState';
+import { useProject } from '../components/ProjectContext';
+import { useLiveData } from '../hooks/useLiveData';
 import type { LeakLink, LeakPlatform, LeakStatus } from '../data/types';
+import { subscribeLeakStatuses, updateLeakStatusInFirestore } from '../lib/firestoreSync';
+import {
+  dispatchLeakTakedown,
+  dispatchAction,
+  onActionDispatched,
+} from '../lib/actionDispatcher';
+import type { DispatchedAction } from '../lib/actionDispatcher';
 
 const statusTabs: ('ALL' | LeakStatus)[] = ['ALL', 'ACTIVE', 'TAKEDOWN_SENT', 'REMOVED'];
 
@@ -61,7 +70,9 @@ function threatForQuality(q: LeakLink['quality']): LeakLink['threat'] {
 }
 
 export function Leaks() {
-  const [links, setLinks] = useState<LeakLink[]>(leakLinks);
+  const { project } = useProject();
+  const { liveLeaks, isLive, lastUpdated, refresh, isLoading } = useLiveData(project.keywords.join(','));
+  const [links, setLinks] = useState<LeakLink[]>(fallbackLeaks);
   const [filter, setFilter] = useState<'ALL' | LeakStatus>('ALL');
   const [query, setQuery] = useState('');
   const [formOpen, setFormOpen] = useState(false);
@@ -70,6 +81,53 @@ export function Leaks() {
   const [newQuality, setNewQuality] = useState<LeakLink['quality']>('HD');
   const toast = useToast();
   const { apply } = useRoom();
+
+  useEffect(() => {
+    if (liveLeaks && liveLeaks.length > 0) {
+      const timer = setTimeout(() => {
+        setLinks((prev) => {
+          // preserve status of existing user actions, add new live detected leaks
+          const prevMap = new Map(prev.map((l) => [l.url, l]));
+          const merged = liveLeaks.map((leak) => {
+            const existing = prevMap.get(leak.url);
+            return existing ? { ...leak, status: existing.status, statusUpdated: existing.statusUpdated } : leak;
+          });
+          // add any manual user entries not in liveLeaks
+          for (const l of prev) {
+            if (!merged.some((m) => m.url === l.url || m.id === l.id)) {
+              merged.push(l);
+            }
+          }
+          return merged;
+        });
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [liveLeaks]);
+
+  // Subscribe to real-time Firestore leak status updates
+  useEffect(() => {
+    const unsub = subscribeLeakStatuses((statusMap) => {
+      if (Object.keys(statusMap).length > 0) {
+        setLinks((prev) =>
+          prev.map((l) => (statusMap[l.id] ? { ...l, status: statusMap[l.id] } : l))
+        );
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  // Cross-tab broadcast listener
+  useEffect(() => {
+    const unsub = onActionDispatched((action: DispatchedAction) => {
+      if (action.type === 'TAKEDOWN_LEAK' && action.metadata?.leakId) {
+        const id = action.metadata.leakId as string;
+        const newStatus = (action.metadata.newStatus as LeakStatus) || 'TAKEDOWN_SENT';
+        setLinks((prev) => prev.map((l) => (l.id === id ? { ...l, status: newStatus, statusUpdated: nowIST() } : l)));
+      }
+    });
+    return unsub;
+  }, []);
 
   const active = links.filter((l) => l.status === 'ACTIVE');
   const handled = links.filter((l) => l.status !== 'ACTIVE');
@@ -86,6 +144,9 @@ export function Leaks() {
   const updateStatus = (id: string, status: LeakStatus, message: string, tone: 'success' | 'warn') => {
     setLinks((prev) => prev.map((l) => (l.id === id ? { ...l, status, statusUpdated: nowIST() } : l)));
     apply(status === 'REMOVED' ? 'removed' : 'takedown');
+    updateLeakStatusInFirestore(id, status);
+    const targetLeak = links.find((l) => l.id === id);
+    dispatchLeakTakedown(id, targetLeak?.url || id, status);
     toast(status === 'REMOVED' ? `${message} · risk −3` : `${message} · velocity −2`, tone);
   };
 
@@ -102,21 +163,25 @@ export function Leaks() {
     } catch {
       host = url.split('/')[0];
     }
-    setLinks((prev) => [
-      {
-        id: `leak-${Date.now()}`,
-        host,
-        url,
-        platform: newPlatform,
-        quality: newQuality,
-        threat: threatForQuality(newQuality),
-        detected: nowIST(),
-        views: '—',
-        status: 'ACTIVE',
-        statusUpdated: nowIST(),
-      },
-      ...prev,
-    ]);
+    const newLeakItem: LeakLink = {
+      id: `leak-${Date.now()}`,
+      host,
+      url,
+      platform: newPlatform,
+      quality: newQuality,
+      threat: threatForQuality(newQuality),
+      detected: nowIST(),
+      views: '—',
+      status: 'ACTIVE',
+      statusUpdated: nowIST(),
+    };
+    setLinks((prev) => [newLeakItem, ...prev]);
+    dispatchAction('REPORT_LEAK', 'LEAK', `New Leak Vector: ${host}`, `URL tracking initiated: ${url}`, {
+      leakId: newLeakItem.id,
+      url,
+      platform: newPlatform,
+      quality: newQuality,
+    });
     setNewUrl('');
     setFormOpen(false);
     toast(`Now tracking ${host}`, 'success');
@@ -134,19 +199,51 @@ export function Leaks() {
       <div className="mx-auto max-w-[1400px] space-y-5">
         <div className="flex flex-wrap items-end justify-between gap-3 pb-1">
           <div>
-            <p className="text-[13px] font-medium text-war-text-muted">Cinema Damage Control Room</p>
+            <div className="flex items-center gap-2">
+              <p className="text-[13px] font-medium text-war-text-muted">Cinema Damage Control Room</p>
+              {isLive ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#ff453a]/30 bg-[#ff453a]/10 px-2 py-0.5 text-[11px] font-semibold text-[#ff6961]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#ff453a] animate-pulse" />
+                  LIVE RADAR ACTIVE
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] font-medium text-war-text-muted">
+                  SIMULATED
+                </span>
+              )}
+            </div>
             <h1 className="apple-title mt-0.5">Leaks</h1>
-            <p className="apple-subhead mt-1">Pirated copies across the web.</p>
+            <p className="apple-subhead mt-1">Real-time pirated copies and unauthorized stream crawler for {project.title}.</p>
           </div>
-          <button
-            onClick={() => setFormOpen((o) => !o)}
-            aria-expanded={formOpen}
-            className="apple-button flex items-center gap-1.5 bg-[#0a84ff] px-4 py-2 text-[14px] text-white hover:bg-[#409cff]"
-          >
-            {formOpen ? <GIcon name="close" size={15} /> : <GIcon name="add" size={15} />}
-            {formOpen ? 'Close' : 'Report link'}
-          </button>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => refresh()}
+              disabled={isLoading}
+              className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-war-text-secondary transition hover:bg-white/[0.08] hover:text-white disabled:opacity-50"
+            >
+              <GIcon name="refresh" size={13} className={isLoading ? 'animate-spin' : ''} />
+              <span>{isLoading ? 'Scanning...' : 'Scan Now'}</span>
+            </button>
+            <button
+              onClick={() => setFormOpen((o) => !o)}
+              aria-expanded={formOpen}
+              className="apple-button flex items-center gap-1.5 bg-[#0a84ff] px-4 py-2 text-[14px] text-white hover:bg-[#409cff]"
+            >
+              {formOpen ? <GIcon name="close" size={15} /> : <GIcon name="add" size={15} />}
+              {formOpen ? 'Close' : 'Report link'}
+            </button>
+          </div>
         </div>
+
+        {lastUpdated && (
+          <div className="flex items-center justify-between text-[12px] text-war-text-muted px-1">
+            <span>Scanning Telegram piracy channels, cyberlocker indexers, torrent trackers, and video streams</span>
+            <span className="tabular-nums">
+              Last sweep: {new Date(lastUpdated).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          </div>
+        )}
 
         <AnimatePresence>
           {formOpen && (
@@ -248,8 +345,8 @@ export function Leaks() {
                 </tr>
               </thead>
               <tbody>
-                {visible.map((link) => (
-                  <tr key={link.id} className="border-b border-white/[0.05] transition last:border-0 hover:bg-white/[0.04]">
+                {visible.map((link, idx) => (
+                  <tr key={`${link.id}-${idx}`} className="border-b border-white/[0.05] transition last:border-0 hover:bg-white/[0.04]">
                     <td className="px-4 py-3">
                       <StatusBadge severity={link.threat} size="xs" />
                     </td>

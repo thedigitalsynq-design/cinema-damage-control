@@ -27,12 +27,26 @@
   --color-war-accent: #0a84ff;
   --color-war-accent-dim: #0a84ff26;
 
-  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Inter', 'Segoe UI', sans-serif;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Display', sans-serif;
   --font-mono: 'SF Mono', ui-monospace, 'JetBrains Mono', monospace;
-  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
+  --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Display', sans-serif;
 
   --shadow-apple-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
   --shadow-apple-pop: 0 8px 40px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-spatial-float: 0 24px 48px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+  --shadow-amber-glow: 0 0 24px rgba(255, 123, 41, 0.35), 0 0 60px rgba(255, 123, 41, 0.15);
+}
+
+/* Atmospheric Obsidian Glass for Dark Mode — Cinema Damage Control War Room */
+html,
+html.theme-obsidian,
+html.dark,
+body {
+  background: 
+    radial-gradient(120% 120% at 20% 10%, #1e1b4b 0%, #0f172a 40%, #030712 100%),
+    #030712;
+  background-attachment: fixed;
+  color: var(--color-war-text);
 }
 
 .material-symbols-outlined {
@@ -117,13 +131,114 @@
 }
 
 @layer components {
-  /* Apple card: generous radius, soft depth, frosted */
-  .glass-panel {
+  /* Blended Vision Pro + Luxury Obsidian Connected Pipeline Elements */
+  .blended-card {
+    position: relative;
+    background: linear-gradient(135deg, rgba(28, 29, 34, 0.85) 0%, rgba(18, 19, 24, 0.9) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(28px) saturate(190%);
+    -webkit-backdrop-filter: blur(28px) saturate(190%);
+    border-radius: 24px;
+    box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.6), inset 0 1px 1px 0 rgba(255, 255, 255, 0.15);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+
+  .blended-card:hover {
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 20px 48px -8px rgba(0, 0, 0, 0.7), inset 0 1px 1px 0 rgba(255, 255, 255, 0.25);
+  }
+
+  /* Iridescent specular glow rim inspired by Vision Pro */
+  .iridescent-border-glow {
+    position: relative;
+  }
+  .iridescent-border-glow::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(255, 182, 193, 0.35), rgba(199, 210, 254, 0.25), rgba(186, 230, 253, 0.35), rgba(254, 215, 170, 0.25));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Amber circuit pipeline glowing active border inspired by Image 2 */
+  .circuit-active-border {
+    border-color: #ff7b29 !important;
+    background: rgba(255, 123, 41, 0.08) !important;
+    box-shadow: 0 0 20px rgba(255, 123, 41, 0.3), inset 0 0 12px rgba(255, 123, 41, 0.15) !important;
+  }
+
+  /* macOS Window Chrome Dots (Red, Yellow, Green) */
+  .window-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .window-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 9999px;
+    display: inline-block;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  }
+  .window-dot-red { background: #ff5f56; }
+  .window-dot-yellow { background: #ffbd2e; }
+  .window-dot-green { background: #27c93f; }
+
+  /* Vision Pro Soft 3D Tactile Push Sphere / Switch */
+  .tactile-knob {
+    background: radial-gradient(circle at 35% 30%, #ffffff 0%, #e2e8f0 70%, #cbd5e1 100%);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35), inset 0 1px 2px rgba(255, 255, 255, 0.8);
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .tactile-knob:active {
+    transform: scale(0.92);
+  }
+
+  /* Image 2 Luxury Glowing CTA Button */
+  .amber-ritual-button {
+    background: linear-gradient(135deg, #ff9f43 0%, #ff7b29 50%, #f35d07 100%);
+    color: #0b0c0f;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    border-radius: 999px;
+    box-shadow: 0 4px 20px rgba(255, 123, 41, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.5);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .amber-ritual-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 28px rgba(255, 123, 41, 0.6), inset 0 1px 3px rgba(255, 255, 255, 0.7);
+  }
+  .amber-ritual-button:active {
+    transform: scale(0.97);
+  }
+
+  /* SVG Glowing Circuit Trace Lines */
+  .glowing-circuit-path {
+    stroke: #ff7b29;
+    stroke-width: 2.5;
+    fill: none;
+    stroke-linecap: round;
+    filter: drop-shadow(0 0 6px rgba(255, 123, 41, 0.85));
+  }
+
+
+  .circuit-pulse-node {
+    fill: #ff7b29;
+    filter: drop-shadow(0 0 8px rgba(255, 123, 41, 1));
+  }
+  .glass-panel,
+  .blended-card {
     background: linear-gradient(180deg, rgba(44, 44, 46, 0.72), rgba(28, 28, 30, 0.72));
     border: 1px solid var(--color-war-border);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border-radius: 20px;
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border-radius: 24px;
     box-shadow: var(--shadow-apple-card);
   }
 

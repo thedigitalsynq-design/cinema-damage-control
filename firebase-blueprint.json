@@ -1,0 +1,67 @@
+{
+  "entities": {
+    "films": {
+      "title": "Film",
+      "description": "Indian Cinema film metadata and box office risk profiles",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "language": { "type": "string" },
+        "genre": { "type": "string" },
+        "releaseDate": { "type": "string" },
+        "budget": { "type": "string" },
+        "status": { "type": "string" },
+        "score": { "type": "number" }
+      },
+      "required": ["id", "title"]
+    },
+    "incidents": {
+      "title": "Incident",
+      "description": "Box office crisis incidents and threat signals",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "code": { "type": "string" },
+        "title": { "type": "string" },
+        "severity": { "type": "string" },
+        "status": { "type": "string" },
+        "firstDetected": { "type": "string" },
+        "reach": { "type": "string" },
+        "owner": { "type": "string" }
+      },
+      "required": ["id", "title"]
+    },
+    "leakLinks": {
+      "title": "Leak Link",
+      "description": "Piracy leak links and DMCA takedown status",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "host": { "type": "string" },
+        "url": { "type": "string" },
+        "platform": { "type": "string" },
+        "quality": { "type": "string" },
+        "threat": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "url"]
+    },
+    "interventions": {
+      "title": "Intervention",
+      "description": "Deployed mitigation actions and countermeasure logs",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "filmId": { "type": "string" },
+        "actionTitle": { "type": "string" },
+        "urgency": { "type": "string" },
+        "executedAt": { "type": "string" }
+      },
+      "required": ["id", "actionTitle"]
+    }
+  },
+  "securityRules": {
+    "rules": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{document=**} {\n      allow read, write: if true;\n    }\n  }\n}"
+  }
+}

@@ -31,7 +31,7 @@ import { useProject } from '../components/ProjectContext';
 import { useRoom } from '../components/RoomState';
 import { useLiveData } from '../hooks/useLiveData';
 import { recoveryData } from './Recovery';
-import { films, activeCrises, roomTotals, damageBand, bandStyles, liveScoreOf } from '../data/damage';
+import { films, activeCrises, roomTotals, damageBand, bandStyles, liveScoreOf, getResolvedFilmDamage } from '../data/damage';
 import { computeDamage, escalationFor, smoothScore } from '../data/algorithm';
 import { motion } from 'framer-motion';
 import { AnimatedNumber, RefreshFlash, Stagger, StaggerItem } from '../components/motion';
@@ -41,6 +41,15 @@ import { ExecutiveDossierModal } from '../components/ExecutiveDossierModal';
 import { CountermeasureModal, type CountermeasureType } from '../components/CountermeasureModal';
 import { LiveIntelStream } from '../components/LiveIntelStream';
 import { D3ThreatTelemetryChart } from '../components/D3ThreatTelemetryChart';
+import { BlendedWorkflowEngine } from '../components/BlendedWorkflowEngine';
+import { Latest30DaysIndianFilmsRoster } from '../components/Latest30DaysIndianFilmsRoster';
+import { formatISTTime } from '../utils/istTime';
+import { RealtimeTelemetryBar } from '../components/RealtimeTelemetryBar';
+import { TheatricalWeatherCircuitMatrix } from '../components/TheatricalWeatherCircuitMatrix';
+import { WorldwideForexMatrix } from '../components/WorldwideForexMatrix';
+import { VerifiedTradeDisclosuresFeed } from '../components/VerifiedTradeDisclosuresFeed';
+import { MathematicalDerivationModal } from '../components/MathematicalDerivationModal';
+import { BoxOfficeTrackerModal } from '../components/BoxOfficeTrackerModal';
 
 function RiskGauge({ score, label }: { score: number; label: string }) {
   const radius = 52;
@@ -91,7 +100,7 @@ function DamageCommand({ liveNegPct, backendLive }: { liveNegPct?: number; backe
   const totals = roomTotals();
   const redMarkets = films.flatMap((f) => f.markets).filter((m) => m.health < 50).length;
   const top = activeCrises[0];
-  const topFilm = top ? films.find((f) => f.id === top.filmId) : undefined;
+  const topFilm = top ? (getResolvedFilmDamage(top.filmId) || films.find((f) => f.id === top.filmId)) : undefined;
   const topScore = topFilm ? liveScoreOf(topFilm, topFilm.id === 'toxic' ? liveNegPct : undefined) : 0;
 
   const strip = [
@@ -128,26 +137,40 @@ function DamageCommand({ liveNegPct, backendLive }: { liveNegPct?: number; backe
 
       {activeCrises.length > 0 && (
         <div>
-          <div className="mb-2.5 flex items-center gap-2">
-            <span className="text-[13px] font-bold tracking-[0.08em] text-[#ff6961]">🚨 ACTIVE CRISES</span>
-            <span className="apple-footnote">{activeCrises.length} open</span>
+          <div className="mb-2.5 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-[13px] font-bold tracking-[0.08em] text-[#ff6961]">🚨 ACTIVE CRISES</span>
+              <span className="apple-footnote">{activeCrises.length} open</span>
+            </div>
+            <div className="window-dots hidden sm:inline-flex">
+              <span className="window-dot window-dot-red" />
+              <span className="window-dot window-dot-yellow" />
+              <span className="window-dot window-dot-green" />
+            </div>
           </div>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {activeCrises.map((c) => {
-              const film = films.find((f) => f.id === c.filmId)!;
+              const film = getResolvedFilmDamage(c.filmId) || films.find((f) => f.id === c.filmId)!;
               const score = liveScoreOf(film, film.id === 'toxic' ? liveNegPct : undefined);
               return (
-                <div key={c.id} className="rounded-[20px] border border-[#ff453a]/30 bg-gradient-to-b from-[#ff453a]/[0.10] to-transparent p-5">
-                  <div className="mb-2 flex flex-wrap items-center gap-2">
-                    <StatusBadge severity={c.severity} size="sm" />
-                    <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${bandStyles[damageBand(score)]}`}>
-                      Damage {score}
-                    </span>
-                    {film.modelled && (
-                      <span className="rounded-full bg-white/[0.07] px-2.5 py-1 text-[10px] font-semibold tracking-wider text-war-text-muted">MODELLED</span>
-                    )}
+                <div key={c.id} className="blended-card border border-[#ff453a]/30 bg-gradient-to-b from-[#ff453a]/[0.10] via-black/60 to-transparent p-5">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="window-dots">
+                      <span className="window-dot window-dot-red" />
+                      <span className="window-dot window-dot-yellow" />
+                      <span className="window-dot window-dot-green" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <StatusBadge severity={c.severity} size="sm" />
+                      <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${bandStyles[damageBand(score)]}`}>
+                        Damage {score}
+                      </span>
+                      {film.modelled && (
+                        <span className="rounded-full bg-white/[0.07] px-2 py-0.5 text-[10px] font-semibold tracking-wider text-war-text-muted">MODELLED</span>
+                      )}
+                    </div>
                   </div>
-                  <h3 className="text-[17px] font-bold tracking-tight text-white">{c.filmTitle}</h3>
+                  <h3 className="text-[18px] font-bold tracking-tight text-white">{c.filmTitle}</h3>
                   <p className="mt-1 text-[13px] leading-relaxed text-war-text-secondary">{c.problem}</p>
                   <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px]">
                     {c.markets.map((m) => (
@@ -158,7 +181,7 @@ function DamageCommand({ liveNegPct, backendLive }: { liveNegPct?: number; backe
                     <span className="tabular-nums text-war-text-muted">Revenue at risk <span className="font-semibold text-[#ff6961]">{c.revenueAtRisk}</span></span>
                     <span className="tabular-nums text-war-text-muted">{c.trend}</span>
                   </div>
-                  <div className="mt-4 flex gap-2">
+                  <div className="mt-4 flex gap-2 pt-2 border-t border-white/[0.06]">
                     <button
                       onClick={() => navigate(`/film/${c.filmId}`)}
                       className="apple-button bg-white/[0.10] px-4 py-2 text-[13px] font-medium text-white hover:bg-white/[0.16]"
@@ -167,9 +190,9 @@ function DamageCommand({ liveNegPct, backendLive }: { liveNegPct?: number; backe
                     </button>
                     <button
                       onClick={() => navigate('/response')}
-                      className="apple-button bg-[#0a84ff] px-4 py-2 text-[13px] font-medium text-white hover:bg-[#409cff]"
+                      className="apple-button amber-ritual-button px-4 py-2 text-[13px] font-bold"
                     >
-                      Take action
+                      Deploy Countermeasure →
                     </button>
                   </div>
                 </div>
@@ -443,8 +466,26 @@ function PhaseLead({ flaggedCount }: { flaggedCount: number }) {
 export function CommandCenter() {
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [flagged, setFlagged] = useState<Set<string>>(new Set());
+  const [mathModalOpen, setMathModalOpen] = useState(false);
+  const [boxOfficeModalOpen, setBoxOfficeModalOpen] = useState(false);
   const { project } = useProject();
-  const { lastUpdated, isLive, isLoading, refresh, stats, liveIncidents } = useLiveData(project.keywords.join(','));
+  const {
+    lastUpdated,
+    lastSyncedExact,
+    secondsSinceSync,
+    latencyMs,
+    confidenceIndex,
+    activeStreamsCount,
+    weatherHubs,
+    currencyRates,
+    tradeDisclosures,
+    isLive,
+    isLoading,
+    refresh,
+    stats,
+    liveIncidents,
+    liveLeaks,
+  } = useLiveData(project.keywords.join(','));
   const toast = useToast();
   const { pressure, reset: resetPressure } = useRoom();
 
@@ -514,7 +555,7 @@ export function CommandCenter() {
   const pressureActive = Math.abs(pressure.risk) >= 0.5 || Math.abs(pressure.velocity) >= 0.5;
 
   // Damage algorithm: one explainable score from measurements + model + you.
-  const activeFilm = films.find((f) => f.id === projectId) || films[0];
+  const activeFilm = getResolvedFilmDamage(projectId) || films.find((f) => f.id === projectId) || films[0];
   const activeMarkets = activeFilm.markets || [];
 
   const [activeScenario, setActiveScenario] = useState<ScenarioId>('baseline');
@@ -525,13 +566,16 @@ export function CommandCenter() {
   const scenarioScoreOffset =
     activeScenario === 'leak' ? 24 : activeScenario === 'boycott' ? 20 : activeScenario === 'embargo' ? 14 : 0;
 
+  const activeLeakSource = liveLeaks && liveLeaks.length > 0 ? liveLeaks : leakLinks;
+  const currentIncidentsList = isLive && liveIncidents && liveIncidents.length > 0 ? liveIncidents : incidents;
+
   const damage = computeDamage({
     negativity: live ? live.negPct : -sim.sentiment,
     velocityPct: live ? live.velocityPct : sim.velocity,
     reachMillions: live ? live.totalReach / 1e6 : sim.reach,
     weakMarkets: activeMarkets.filter((m) => m.health < 50).length,
     totalMarkets: activeMarkets.length,
-    activeLeaks: leakLinks.filter((l) => l.status === 'ACTIVE').length + (activeScenario === 'leak' ? 3 : 0),
+    activeLeaks: activeLeakSource.filter((l) => l.status === 'ACTIVE').length + (activeScenario === 'leak' ? 3 : 0),
     pressureRisk: pressure.risk,
     sampleSize: live ? live.total : 0,
   });
@@ -607,10 +651,23 @@ export function CommandCenter() {
               pulseKey={lastUpdated || 'loading'}
               className="text-[12px] tabular-nums text-war-text-muted"
             >
-              {lastUpdated ? `Updated ${new Date(lastUpdated).toLocaleTimeString('en-IN')}` : 'Loading…'}
+              {lastUpdated ? `Updated ${formatISTTime(lastUpdated)}` : 'Loading…'}
             </RefreshFlash>
           </div>
         </div>
+
+        {/* Real-time Multi-Stream Telemetry & Audit Bar */}
+        <RealtimeTelemetryBar
+          lastSyncedExact={lastSyncedExact}
+          secondsSinceSync={secondsSinceSync}
+          latencyMs={latencyMs}
+          confidenceIndex={confidenceIndex}
+          activeStreamsCount={activeStreamsCount}
+          isLive={isLive}
+          isLoading={isLoading}
+          onRefresh={refresh}
+          onOpenMathModal={() => setMathModalOpen(true)}
+        />
 
         {/* Crisis Simulation Sandbox */}
         <CrisisSandbox
@@ -678,7 +735,30 @@ export function CommandCenter() {
           </motion.div>
         )}
 
+        {/* Blended Vision Pro Glass × Obsidian Luminous Circuit Pipeline */}
+        <BlendedWorkflowEngine
+          onDeployComplete={() => {
+            setCountermeasureType('press_release');
+            setCountermeasureOpen(true);
+          }}
+        />
+
         <DamageCommand liveNegPct={live ? live.negPct : undefined} backendLive={isLive && !!stats} />
+
+        {/* Latest 30-Day Indian Theatrical Releases Roster (IST Synced) */}
+        <Latest30DaysIndianFilmsRoster />
+
+        {/* 7 Theatrical Distribution Circuits Live Weather & Footfall Impact */}
+        <TheatricalWeatherCircuitMatrix weatherHubs={weatherHubs} />
+
+        {/* Verified Trade Disclosures & Sacnilk Feed */}
+        <VerifiedTradeDisclosuresFeed
+          disclosures={tradeDisclosures}
+          onOpenBoxOfficeTracker={() => setBoxOfficeModalOpen(true)}
+        />
+
+        {/* Worldwide Forex Conversion Matrix */}
+        <WorldwideForexMatrix currencyRates={currencyRates} />
 
         <PhaseLead flaggedCount={flagged.size} />
 
@@ -1259,7 +1339,7 @@ export function CommandCenter() {
                     <GIcon name="radio" size={10} /> Live
                   </span>
                 )}
-                <span className="text-[12px] text-war-text-muted">{incidents.filter(i => i.status !== 'RESOLVED').length} active</span>
+                <span className="text-[12px] text-war-text-muted">{currentIncidentsList.filter(i => i.status !== 'RESOLVED').length} active</span>
               </div>
             </div>
             <div className="overflow-x-auto">
@@ -1277,7 +1357,7 @@ export function CommandCenter() {
                   </tr>
                 </thead>
                 <tbody>
-                  {incidents.map((inc) => (
+                  {currentIncidentsList.map((inc) => (
                     <tr
                       key={inc.id}
                       className="group cursor-pointer border-b border-white/[0.05] transition last:border-0 hover:bg-white/[0.04]"
@@ -1336,6 +1416,25 @@ export function CommandCenter() {
         isOpen={countermeasureOpen}
         onClose={() => setCountermeasureOpen(false)}
         initialType={countermeasureType}
+      />
+
+      {/* Exact Mathematical Precision Derivation Audit Modal */}
+      <MathematicalDerivationModal
+        isOpen={mathModalOpen}
+        onClose={() => setMathModalOpen(false)}
+        negPct={live ? live.negPct : Math.round(-sim.sentiment)}
+        velocityPct={live ? live.velocityPct : Math.round(sim.velocity)}
+        reachMillions={live ? Number((live.totalReach / 1e6).toFixed(1)) : Number(sim.reach.toFixed(1))}
+        sampleSize={live ? live.total : 48}
+        score={Math.round(gaugeShown)}
+        lastSyncedExact={lastSyncedExact}
+      />
+
+      {/* Multi-Source Box Office Consensus Engine & Internet Scanner */}
+      <BoxOfficeTrackerModal
+        isOpen={boxOfficeModalOpen}
+        onClose={() => setBoxOfficeModalOpen(false)}
+        initialFilm={project.title}
       />
     </div>
   );

@@ -4,6 +4,7 @@ import { useLiveData } from '../hooks/useLiveData';
 import { estimateSentiment } from '../data/apiService';
 import { useToast } from '../components/Toaster';
 import { useProject } from '../components/ProjectContext';
+import { dispatchExportReport } from '../lib/actionDispatcher';
 
 function downloadMarkdown(filename: string, body: string) {
   const blob = new Blob([body], { type: 'text/markdown;charset=utf-8' });
@@ -111,7 +112,7 @@ function buildBrief(
 export function Reports() {
   const toast = useToast();
   const { project } = useProject();
-  const { news: liveNews, stats: briefStats, isLive: briefLive, lastUpdated: liveUpdated, isLoading: liveLoading } = useLiveData(project.keywords.join(','));
+  const { news: liveNews, stats: briefStats, isLive: briefLive, lastUpdated: liveUpdated, isLoading: liveLoading, refresh } = useLiveData(project.keywords.join(','));
   const liveOk = briefLive && !!briefStats;
   const brief = buildBrief(project, briefStats, liveOk);
 
@@ -137,6 +138,7 @@ export function Reports() {
       brief.ifNoAction,
     ].join('\n');
     downloadMarkdown(`${project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-60-second-brief.md`, md);
+    dispatchExportReport('60-Second Executive Brief', project.title);
     toast('Brief downloaded as Markdown', 'success');
   };
 
@@ -155,16 +157,42 @@ export function Reports() {
       ...brief.topActions.map((a, i) => `${i + 1}. ${a}`),
     ].join('\n');
     downloadMarkdown(`${id}.md`, md);
+    dispatchExportReport(title, `${project.title} (${subtitle})`);
     toast(`“${title}” downloaded as Markdown`, 'success');
   };
 
   return (
     <div className="flex-1 overflow-y-auto px-6 py-6 lg:px-8">
       <div className="mx-auto max-w-[1400px] space-y-5">
-        <div className="pb-1">
-          <p className="text-[13px] font-medium text-war-text-muted">Cinema Damage Control Room</p>
-          <h1 className="apple-title mt-0.5">Reports</h1>
-          <p className="apple-subhead mt-1">Briefs and exports for {project.title}.</p>
+        <div className="flex flex-wrap items-end justify-between gap-3 pb-1">
+          <div>
+            <div className="flex items-center gap-2">
+              <p className="text-[13px] font-medium text-war-text-muted">Cinema Damage Control Room</p>
+              {liveOk ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#30d158]/30 bg-[#30d158]/10 px-2 py-0.5 text-[11px] font-semibold text-[#30d158]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#30d158] animate-pulse" />
+                  LIVE BRIEFS
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] font-medium text-war-text-muted">
+                  SIMULATED
+                </span>
+              )}
+            </div>
+            <h1 className="apple-title mt-0.5">Reports</h1>
+            <p className="apple-subhead mt-1">Real-time intelligence dossiers and executive briefs for {project.title}.</p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => refresh()}
+              disabled={liveLoading}
+              className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-war-text-secondary transition hover:bg-white/[0.08] hover:text-white disabled:opacity-50"
+            >
+              <GIcon name="refresh" size={13} className={liveLoading ? 'animate-spin' : ''} />
+              <span>{liveLoading ? 'Recalculating...' : 'Sync Briefs'}</span>
+            </button>
+          </div>
         </div>
 
         {/* Executive Brief Preview */}
@@ -172,7 +200,9 @@ export function Reports() {
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <div>
               <span className="section-title">The 60-second brief</span>
-              <p className="mt-1 text-[12px] tabular-nums text-war-text-muted">Last updated 34 seconds ago</p>
+              <p className="mt-1 text-[12px] tabular-nums text-war-text-muted">
+                {liveUpdated ? `Synthesized from live wire at ${new Date(liveUpdated).toLocaleTimeString('en-IN')}` : 'Estimated baseline'}
+              </p>
             </div>
             <button
               onClick={exportBrief}
@@ -328,7 +358,7 @@ function ReportsLiveSection({ news, isLive, lastUpdated, isLoading }: {
                 </p>
                 <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
                   <span className="text-[12px] text-war-text-muted">{item.source || 'News'}</span>
-                  {item.pubDate && (
+                  {item.pubDate && !isNaN(new Date(item.pubDate).getTime()) && (
                     <span className="text-[12px] tabular-nums text-war-text-muted">
                       {new Date(item.pubDate).toLocaleString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' })}
                     </span>

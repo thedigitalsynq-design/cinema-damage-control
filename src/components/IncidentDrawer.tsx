@@ -4,12 +4,15 @@ import { useNavigate } from 'react-router-dom';
 import { StatusBadge } from './ui/StatusBadge';
 import { useToast } from './Toaster';
 import { useRoom } from './RoomState';
+import { useLiveDataContext } from '../context/LiveDataContext';
+import { dispatchResolveIncident, dispatchAction } from '../lib/actionDispatcher';
 import type { Incident } from '../data/types';
 
 export function IncidentDrawer({ incident, onClose }: { incident: Incident; onClose: () => void }) {
   const navigate = useNavigate();
   const toast = useToast();
   const { apply } = useRoom();
+  const { resolveIncident } = useLiveDataContext();
   return (
     <>
       <motion.div
@@ -124,28 +127,50 @@ export function IncidentDrawer({ incident, onClose }: { incident: Incident; onCl
           </div>
 
           {/* Actions */}
-          <div className="flex gap-2.5 pt-2">
-            <button
-              onClick={() => {
-                apply('plan');
-                toast(`Response plan started for ${incident.code} · risk −3`, 'success');
-                onClose();
-                navigate('/response');
-              }}
-              className="apple-button flex-1 bg-[#0a84ff] px-4 py-2.5 text-[14px] text-white hover:bg-[#409cff]"
-            >
-              Create Response Plan
-            </button>
-            <button
-              onClick={() => {
-                apply('escalate');
-                toast(`Escalated ${incident.code} to C-Suite`, 'warn');
-                onClose();
-              }}
-              className="apple-button flex items-center gap-1 bg-white/10 px-4 py-2.5 text-[14px] text-white hover:bg-white/15"
-            >
-              Escalate <GIcon name="chevron_right" size={14} />
-            </button>
+          <div className="space-y-2 pt-2">
+            {incident.status !== 'RESOLVED' ? (
+              <button
+                onClick={() => {
+                  resolveIncident(incident.id);
+                  dispatchResolveIncident(incident.id, incident.title);
+                  apply('approve');
+                  toast(`Incident ${incident.code} marked resolved · risk −4`, 'success');
+                  onClose();
+                }}
+                className="apple-button flex w-full items-center justify-center gap-2 bg-[#30d158] px-4 py-2.5 text-[14px] font-semibold text-black hover:brightness-110"
+              >
+                <GIcon name="check_circle" size={16} /> Mark Resolved & Neutralize Threat
+              </button>
+            ) : (
+              <div className="flex items-center justify-center gap-2 rounded-xl border border-[#30d158]/30 bg-[#30d158]/10 py-2.5 text-[13px] font-medium text-[#30d158]">
+                <GIcon name="check_circle" size={16} /> Threat Vector Neutralized
+              </div>
+            )}
+            <div className="flex gap-2.5">
+              <button
+                onClick={() => {
+                  apply('plan');
+                  dispatchAction('CREATE_PLAN', 'INCIDENT', `Response Plan Initiated: ${incident.code}`, `Incident: ${incident.title}`, { incidentId: incident.id });
+                  toast(`Response plan started for ${incident.code} · risk −3`, 'success');
+                  onClose();
+                  navigate('/response');
+                }}
+                className="apple-button flex-1 bg-[#0a84ff] px-4 py-2 text-[13px] text-white hover:bg-[#409cff]"
+              >
+                Open Playbook
+              </button>
+              <button
+                onClick={() => {
+                  apply('escalate');
+                  dispatchAction('ESCALATE_INCIDENT', 'INCIDENT', `Escalated to C-Suite: ${incident.code}`, `Incident: ${incident.title}`, { incidentId: incident.id });
+                  toast(`Escalated ${incident.code} to C-Suite`, 'warn');
+                  onClose();
+                }}
+                className="apple-button flex items-center gap-1 bg-white/10 px-4 py-2 text-[13px] text-white hover:bg-white/15"
+              >
+                Escalate <GIcon name="chevron_right" size={14} />
+              </button>
+            </div>
           </div>
         </div>
       </motion.div>

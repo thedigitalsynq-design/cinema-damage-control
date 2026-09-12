@@ -1,6 +1,7 @@
 import { GIcon } from './GIcon';
 import { useRoom } from './RoomState';
 import { useToast } from './Toaster';
+import { useLiveDataContext } from '../context/LiveDataContext';
 
 export type ScenarioId = 'baseline' | 'leak' | 'boycott' | 'embargo';
 
@@ -15,6 +16,7 @@ export function CrisisSandbox({
 }) {
   const { apply, reset } = useRoom();
   const toast = useToast();
+  const { setScenario, simulationSpeedMs, setSimulationSpeed } = useLiveDataContext();
 
   const scenarios: { id: ScenarioId; title: string; desc: string; icon: string; badge: string; color: string }[] = [
     {
@@ -53,6 +55,7 @@ export function CrisisSandbox({
 
   const handleSelect = (s: ScenarioId) => {
     onSelectScenario(s);
+    setScenario(s);
     if (s === 'baseline') {
       reset();
       toast('Restored baseline live telemetry & authentic feeds', 'info');
@@ -84,13 +87,42 @@ export function CrisisSandbox({
           </div>
         </div>
 
-        <button
-          onClick={onOpenCountermeasure}
-          className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-1.5 text-[12px] font-semibold text-white shadow-md shadow-blue-600/30 transition hover:bg-blue-500 active:scale-95"
-        >
-          <GIcon name="bolt" size={14} />
-          Deploy Immediate Countermeasure
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.03] p-0.5 text-[11px]">
+            <button
+              type="button"
+              onClick={() => setSimulationSpeed(2000)}
+              className={`rounded-md px-2 py-1 font-medium transition ${
+                (simulationSpeedMs || 2000) === 2000
+                  ? 'bg-blue-600/30 text-blue-300 font-semibold border border-blue-500/30'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+              title="Real-time 2-second telemetry ticks"
+            >
+              1x Realtime (2s)
+            </button>
+            <button
+              type="button"
+              onClick={() => setSimulationSpeed(1000)}
+              className={`rounded-md px-2 py-1 font-medium transition ${
+                simulationSpeedMs === 1000
+                  ? 'bg-amber-500/30 text-amber-300 font-semibold border border-amber-500/30'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+              title="Fast-forward stress simulation"
+            >
+              ⚡ 2x Speed (1s)
+            </button>
+          </div>
+
+          <button
+            onClick={onOpenCountermeasure}
+            className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-1.5 text-[12px] font-semibold text-white shadow-md shadow-blue-600/30 transition hover:bg-blue-500 active:scale-95"
+          >
+            <GIcon name="bolt" size={14} />
+            Deploy Countermeasure
+          </button>
+        </div>
       </div>
 
       <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">

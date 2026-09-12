@@ -100,7 +100,14 @@ export function LiveIntelStream() {
 
   // Initial load & when project changes
   useEffect(() => {
-    loadAllData();
+    let isMounted = true;
+    const timer = setTimeout(() => {
+      if (isMounted) loadAllData();
+    }, 0);
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
   }, [loadAllData]);
 
   // Interval timer
@@ -255,7 +262,7 @@ export function LiveIntelStream() {
           }`}
         >
           <GIcon name="show_chart" size={16} className="text-emerald-400" />
-          30-Day Audience Demand Curve ({audienceData.total.toLocaleString()} Views)
+          30-Day Audience Demand Curve ({(audienceData?.total ?? 0).toLocaleString()} Views)
         </button>
       </div>
 
@@ -390,7 +397,7 @@ export function LiveIntelStream() {
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <span className="text-[11px] text-zinc-400 uppercase tracking-wider">30-Day Pageviews</span>
-                <div className="text-[22px] font-bold text-white">{audienceData.total.toLocaleString()} Organic Searches</div>
+                <div className="text-[22px] font-bold text-white">{(audienceData?.total ?? 0).toLocaleString()} Organic Searches</div>
               </div>
               <div className="text-right text-[11px] text-zinc-400">
                 Data source: <span className="font-semibold text-emerald-400">Wikimedia REST API</span>
@@ -412,7 +419,7 @@ export function LiveIntelStream() {
                         >
                           {/* Tooltip on hover */}
                           <div className="absolute -top-8 hidden group-hover:block z-20 rounded bg-black/90 px-2 py-1 text-[10px] text-white shadow whitespace-nowrap">
-                            {d.date}: {d.views.toLocaleString()} views
+                            {d.date}: {(d.views ?? 0).toLocaleString()} views
                           </div>
                           <div
                             style={{ height: `${Math.max(6, pct)}%` }}
